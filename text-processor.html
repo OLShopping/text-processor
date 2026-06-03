@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字处理工具</title>
+    <style>
+        :root {
+            --bg: #1e1e2e;
+            --surface: #282840;
+            --surface2: #313150;
+            --border: #3e3e5c;
+            --text: #cdd6f4;
+            --text-secondary: #a6adc8;
+            --accent: #89b4fa;
+            --accent2: #a6e3a1;
+            --danger: #f38ba8;
+            --warning: #fab387;
+            --on-accent: #1e1e2e;
+            --code-bg: #181825;
+            --placeholder: #585b70;
+            --scrollbar-hover: #585b70;
+            --radius: 10px;
+            --transition: 0.2s ease;
+        }
+
+        /* 浅色主题 */
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --surface2: #eef0f4;
+            --border: #d8dae0;
+            --text: #2c2c2c;
+            --text-secondary: #6b6b7b;
+            --accent: #3b6ef0;
+            --accent2: #2e9e5c;
+            --danger: #e04550;
+            --warning: #e89520;
+            --on-accent: #ffffff;
+            --code-bg: #f0f1f4;
+            --placeholder: #a0a4b0;
+            --scrollbar-hover: #b0b4c0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .toolbar .title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-right: 16px;
+            white-space: nowrap;
+        }
+
+        .toolbar .btn {
+            padding: 7px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition);
+            white-space: nowrap;
+        }
+
+        .toolbar .btn:hover {
+            background: var(--border);
+            border-color: var(--accent);
+        }
+
+        .toolbar .btn.accent {
+            background: var(--accent);
+            color: var(--on-accent);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .toolbar .btn.accent:hover {
+            opacity: 0.85;
+        }
+
+        .toolbar .btn.danger {
+            background: transparent;
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .toolbar .btn.danger:hover {
+            background: var(--danger);
+            color: var(--on-accent);
+        }
+
+        .toolbar .sep {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 4px;
+        }
+
+        /* 设置面板 */
+        .settings-panel {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: none;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .settings-panel.visible {
+            display: flex;
+        }
+
+        .settings-panel label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .settings-panel input[type="range"] {
+            width: 80px;
+            accent-color: var(--accent);
+        }
+
+        .settings-panel input[type="color"] {
+            width: 32px;
+            height: 24px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .settings-panel input[type="number"] {
+            width: 60px;
+            padding: 4px 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .settings-panel .rule-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .settings-panel .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--surface2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .settings-panel .rule-item .remove-rule {
+            cursor: pointer;
+            color: var(--danger);
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+        .settings-panel .rule-item .remove-rule:hover {
+            color: var(--danger);
+            opacity: 0.8;
+        }
+
+        .text-muted {
+            color: var(--placeholder);
+        }
+
+        .settings-panel .add-rule-form {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-panel .add-rule-form input {
+            padding: 4px 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 12px;
+            width: 100px;
+        }
+
+        .settings-panel .add-rule-form select {
+            padding: 4px 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        .settings-panel .add-rule-form .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            background: var(--accent);
+            color: var(--on-accent);
+            cursor: pointer;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            min-width: 0;
+        }
+
+        .panel-header {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header .char-count {
+            font-weight: normal;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .panel-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .panel-body textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.8;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        .panel-body textarea::placeholder {
+            color: var(--placeholder);
+        }
+
+        .preview-content {
+            font-size: 15px;
+            line-height: 1.8;
+            word-break: break-word;
+        }
+
+        .preview-content p {
+            margin-bottom: 0.8em;
+        }
+
+        .preview-content .highlight-bold {
+            font-weight: bold;
+        }
+
+        .preview-content h2 {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 0.5em 0;
+            color: inherit;
+            display: block;
+        }
+
+        .preview-content .highlight-color {
+            color: #f9e2af;
+        }
+
+        /* 底部 HTML 代码区 */
+        .bottom-panel {
+            flex-shrink: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+        }
+
+        .bottom-panel .panel-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .bottom-panel .panel-header:hover {
+            background: var(--surface2);
+        }
+
+        .bottom-panel .code-area {
+            padding: 14px 16px;
+            background: var(--code-bg);
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--accent2);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .bottom-panel.collapsed .code-area {
+            display: none;
+        }
+
+        .bottom-panel .resize-handle {
+            height: 4px;
+            background: var(--border);
+            cursor: ns-resize;
+            transition: background var(--transition);
+        }
+
+        .bottom-panel .resize-handle:hover {
+            background: var(--accent);
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-hover);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent2);
+            color: var(--on-accent);
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .panel {
+                flex: none;
+                height: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+        <span class="title">📝 文字处理工具</span>
+        <button class="btn accent" onclick="processText()" title="处理文字">⚡ 处理</button>
+        <button class="btn" onclick="copyHTML()" title="复制HTML代码">📋 复制HTML</button>
+        <button class="btn" onclick="copyText()" title="复制纯文本">📄 复制文本</button>
+        <span class="sep"></span>
+        <button class="btn" id="settingsBtn" onclick="toggleSettings()">⚙️ 设置</button>
+        <button class="btn danger" onclick="clearAll()">🗑️ 清空</button>
+        <span class="sep"></span>
+        <select id="themeSelect" class="btn" style="cursor:pointer;appearance:auto;padding-right:28px;" onchange="onThemeChange(this.value)">
+            <option value="dark">🌙 深色</option>
+            <option value="light">☀️ 浅色</option>
+            <option value="system">💻 跟随系统</option>
+        </select>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <label>
+            预览字号
+            <input type="range" id="previewFontSize" min="12" max="28" value="15" oninput="updatePreviewSettings()">
+            <span id="fontSizeVal">15px</span>
+        </label>
+        <label>
+            段落间距
+            <input type="range" id="paragraphSpacing" min="0" max="2" step="0.1" value="0.8" oninput="updatePreviewSettings()">
+            <span id="spacingVal">0.8em</span>
+        </label>
+        <label>
+            高亮颜色
+            <input type="color" id="highlightColor" value="#f9e2af" onchange="updatePreviewSettings()">
+        </label>
+        <span class="sep" style="background:var(--border);width:1px;height:24px;margin:0 8px;"></span>
+        <div class="rule-group" style="flex-direction:column;align-items:flex-start;gap:6px;">
+            <span style="font-size:13px;color:var(--text-secondary);">加粗加大的关键词</span>
+            <div id="rulesList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <!-- 动态渲染 -->
+            </div>
+            <div class="add-rule-form">
+                <input type="text" id="newKeyword" placeholder="输入关键词">
+                <select id="newStyle">
+                    <option value="bold">加粗</option>
+                    <option value="big">加大</option>
+                    <option value="bold-big">加粗+加大</option>
+                    <option value="color">高亮颜色</option>
+                </select>
+                <button class="btn-sm" onclick="addRule()">+ 添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区：左输入 / 右预览 -->
+    <div class="main-content">
+        <!-- 左侧输入 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>📥 输入文字</span>
+                <span class="char-count" id="inputCount">0 字</span>
+            </div>
+            <div class="panel-body">
+                <textarea id="inputArea" placeholder="在此粘贴或输入文字...&#10;&#10;每段之间用空行分隔，会自动添加 &lt;p&gt; 标签" oninput="onInputChange()"></textarea>
+            </div>
+        </div>
+
+        <!-- 右侧预览 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ 预览</span>
+                <span class="char-count" id="previewCount">0 字</span>
+            </div>
+            <div class="panel-body">
+                <div class="preview-content" id="previewArea">
+                    <p class="text-muted">处理后的预览将在此显示...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部 HTML 代码 -->
+    <div class="bottom-panel" id="bottomPanel">
+        <div class="resize-handle" id="resizeHandle" onmousedown="startResize(event)"></div>
+        <div class="panel-header" onclick="toggleBottom()">
+            <span>💻 HTML 代码</span>
+            <span id="bottomToggleIcon">▼</span>
+        </div>
+        <div class="code-area" id="codeArea">
+            <span class="text-muted">处理后的 HTML 代码将在此显示...</span>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== 默认规则 ====================
+        const defaultRules = [
+            { keyword: '重要', style: 'bold' },
+            { keyword: '注意', style: 'bold-big' },
+            { keyword: '警告', style: 'color' },
+            { keyword: '提示', style: 'bold' },
+            { keyword: '关键', style: 'bold-big' },
+        ];
+
+        let rules = JSON.parse(localStorage.getItem('textProcessorRules')) || [...defaultRules];
+
+        // ==================== 设置面板状态 ====================
+        let settingsVisible = false;
+
+        function toggleSettings() {
+            settingsVisible = !settingsVisible;
+            document.getElementById('settingsPanel').classList.toggle('visible', settingsVisible);
+            document.getElementById('settingsBtn').textContent = settingsVisible ? '⚙️ 隐藏设置' : '⚙️ 设置';
+        }
+
+        function updatePreviewSettings() {
+            const fontSize = document.getElementById('previewFontSize').value;
+            const spacing = document.getElementById('paragraphSpacing').value;
+            const color = document.getElementById('highlightColor').value;
+
+            document.getElementById('fontSizeVal').textContent = fontSize + 'px';
+            document.getElementById('spacingVal').textContent = spacing + 'em';
+
+            const preview = document.getElementById('previewArea');
+            preview.style.fontSize = fontSize + 'px';
+            preview.querySelectorAll('p').forEach(p => {
+                p.style.marginBottom = spacing + 'em';
+            });
+            preview.querySelectorAll('.highlight-color').forEach(el => {
+                el.style.color = color;
+            });
+        }
+
+        // ==================== 规则管理 ====================
+        function renderRules() {
+            const container = document.getElementById('rulesList');
+            container.innerHTML = rules.map((r, i) => {
+                const styleLabel = {
+                    'bold': '加粗',
+                    'big': '加大',
+                    'bold-big': '加粗+加大',
+                    'color': '高亮颜色'
+                }[r.style] || r.style;
+                return `<div class="rule-item">
+                    <strong>${escapeHTML(r.keyword)}</strong>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRule(${i})" title="删除规则">✕</span>
+                </div>`;
+            }).join('');
+            if (rules.length === 0) {
+                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无规则</span>';
+            }
+        }
+
+        function addRule() {
+            const keyword = document.getElementById('newKeyword').value.trim();
+            const style = document.getElementById('newStyle').value;
+            if (!keyword) return;
+            // 避免重复
+            if (rules.some(r => r.keyword === keyword && r.style === style)) {
+                showToast('该规则已存在');
+                return;
+            }
+            rules.push({ keyword, style });
+            saveRules();
+            renderRules();
+            document.getElementById('newKeyword').value = '';
+            processText();
+            showToast('规则已添加');
+        }
+
+        function removeRule(index) {
+            rules.splice(index, 1);
+            saveRules();
+            renderRules();
+            processText();
+        }
+
+        function saveRules() {
+            localStorage.setItem('textProcessorRules', JSON.stringify(rules));
+        }
+
+        // ==================== 文字处理核心 ====================
+        function processText() {
+            const input = document.getElementById('inputArea').value;
+            if (!input.trim()) {
+                document.getElementById('previewArea').innerHTML = '<p class="text-muted">请输入文字内容</p>';
+                document.getElementById('codeArea').innerHTML = '<span class="text-muted">暂无内容</span>';
+                document.getElementById('previewCount').textContent = '0 字';
+                return;
+            }
+
+            // 统一换行符为 \n，按连续空行分割段落
+            const normalized = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const paragraphs = normalized.split(/\n{2,}/).filter(p => p.trim() !== '');
+
+            let htmlParts = [];
+            paragraphs.forEach(para => {
+                const lines = para.trim().split('\n').filter(l => l.trim() !== '');
+                if (lines.length === 0) return;
+
+                // 先对每行转义，再应用规则，最后处理书名号加粗
+                const escapedLines = lines.map(line => formatBookNames(applyRules(line)));
+
+                // 合并段落内的多行为一行（用 <br> 连接）
+                let text = escapedLines.join('<br>');
+
+                htmlParts.push(`<p>${text}</p>`);
+            });
+
+            const html = htmlParts.join('\n');
+            const previewHtml = htmlParts.join('');
+
+            // 更新预览
+            const previewArea = document.getElementById('previewArea');
+            previewArea.innerHTML = previewHtml;
+            updatePreviewSettings(); // 应用字号/间距/颜色设置
+            document.getElementById('previewCount').textContent = countText(previewArea.innerText) + ' 字';
+
+            // 更新底部代码
+            document.getElementById('codeArea').textContent = html;
+        }
+
+        function applyRules(text) {
+            // 先对原始文本进行 HTML 转义
+            let processed = escapeHTML(text);
+
+            // 按关键词长度降序排列，避免短关键词匹配到长关键词的一部分
+            const sortedRules = [...rules].sort((a, b) => b.keyword.length - a.keyword.length);
+
+            sortedRules.forEach(rule => {
+                const escapedKeyword = escapeHTML(rule.keyword);
+                // 对转义后的关键词也做正则转义，确保特殊字符正确匹配
+                const regex = new RegExp(escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+
+                let replacement;
+                switch (rule.style) {
+                    case 'bold':
+                        replacement = `<span class="highlight-bold">${escapedKeyword}</span>`;
+                        break;
+                    case 'big':
+                        replacement = `<h2>${escapedKeyword}</h2>`;
+                        break;
+                    case 'bold-big':
+                        replacement = `<h2>${escapedKeyword}</h2>`;
+                        break;
+                    case 'color':
+                        replacement = `<span class="highlight-color">${escapedKeyword}</span>`;
+                        break;
+                    default:
+                        replacement = escapedKeyword;
+                }
+                processed = processed.replace(regex, replacement);
+            });
+
+            return processed;
+        }
+
+        // ==================== 书名号自动加粗 ====================
+        function formatBookNames(text) {
+            // 匹配《...》中的内容，整体用 <b> 加粗
+            return text.replace(/《([^》]+)》/g, '<b>《$1》</b>');
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function countText(str) {
+            // 统计中文字符+英文单词
+            const chinese = (str.match(/[\u4e00-\u9fff]/g) || []).length;
+            const english = (str.match(/[a-zA-Z0-9]+/g) || []).length;
+            return chinese + english;
+        }
+
+        // ==================== 输入实时处理（防抖） ====================
+        let debounceTimer;
+        function onInputChange() {
+            const input = document.getElementById('inputArea').value;
+            document.getElementById('inputCount').textContent = countText(input) + ' 字';
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(processText, 300);
+        }
+
+        // ==================== 复制功能 ====================
+        function copyHTML() {
+            const html = document.getElementById('codeArea').textContent;
+            if (!html.trim() || html.includes('处理后的 HTML 代码将在此显示')) {
+                showToast('没有可复制的内容');
+                return;
+            }
+            navigator.clipboard.writeText(html).then(() => {
+                showToast('✅ HTML 代码已复制到剪贴板');
+            }).catch(() => {
+                showToast('❌ 复制失败，请手动选择复制');
+            });
+        }
+
+        function copyText() {
+            const preview = document.getElementById('previewArea');
+            const text = preview.innerText;
+            if (!text.trim() || text.includes('请输入文字内容')) {
+                showToast('没有可复制的内容');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ 纯文本已复制到剪贴板');
+            }).catch(() => {
+                showToast('❌ 复制失败，请手动选择复制');
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('inputArea').value = '';
+            document.getElementById('previewArea').innerHTML = '<p class="text-muted">处理后的预览将在此显示...</p>';
+            document.getElementById('codeArea').innerHTML = '<span class="text-muted">处理后的 HTML 代码将在此显示...</span>';
+            document.getElementById('inputCount').textContent = '0 字';
+            document.getElementById('previewCount').textContent = '0 字';
+            showToast('已清空');
+        }
+
+        // ==================== Toast ====================
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // ==================== 底部面板折叠/展开 ====================
+        let bottomCollapsed = false;
+        function toggleBottom() {
+            bottomCollapsed = !bottomCollapsed;
+            const panel = document.getElementById('bottomPanel');
+            panel.classList.toggle('collapsed', bottomCollapsed);
+            document.getElementById('bottomToggleIcon').textContent = bottomCollapsed ? '▶' : '▼';
+        }
+
+        // ==================== 底部面板拖拽缩放 ====================
+        let isResizing = false;
+        let startY = 0;
+        let startHeight = 0;
+        let codeAreaEl;
+
+        function startResize(e) {
+            isResizing = true;
+            startY = e.clientY;
+            codeAreaEl = document.getElementById('codeArea');
+            startHeight = codeAreaEl.offsetHeight;
+            document.body.style.cursor = 'ns-resize';
+            document.body.style.userSelect = 'none';
+
+            document.addEventListener('mousemove', onResize);
+            document.addEventListener('mouseup', stopResize);
+            e.preventDefault();
+        }
+
+        function onResize(e) {
+            if (!isResizing) return;
+            const dy = startY - e.clientY;
+            const newHeight = Math.max(60, Math.min(500, startHeight + dy));
+            codeAreaEl.style.maxHeight = newHeight + 'px';
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        // ==================== 主题切换 ====================
+        const THEME_KEY = 'textProcessorTheme';
+        let themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function getSystemTheme() {
+            return themeMediaQuery.matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                document.documentElement.setAttribute('data-theme', getSystemTheme());
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        function onThemeChange(theme) {
+            localStorage.setItem(THEME_KEY, theme);
+            applyTheme(theme);
+            document.getElementById('themeSelect').value = theme;
+        }
+
+        // 监听系统主题变化（仅在"跟随系统"模式下生效）
+        themeMediaQuery.addEventListener('change', () => {
+            const saved = localStorage.getItem(THEME_KEY) || 'dark';
+            if (saved === 'system') {
+                applyTheme('system');
+            }
+        });
+
+        function initTheme() {
+            const saved = localStorage.getItem(THEME_KEY) || 'dark';
+            document.getElementById('themeSelect').value = saved;
+            applyTheme(saved);
+        }
+
+        // ==================== 键盘快捷键 ====================
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                processText();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                copyHTML();
+            }
+        });
+
+        // ==================== 初始化 ====================
+        function init() {
+            initTheme();
+            renderRules();
+            // 加载示例文本
+            const sampleText = `这是一段示例文字，用于演示文字处理工具的功能。
+
+重要：请注意，这个工具可以自动将文字内容转换为 HTML 格式。
+
+提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。
+
+警告：请确保输入的文字内容符合你的预期格式，每段之间用空行分隔。
+
+关键功能包括：自动段落标签、关键词高亮、实时预览、HTML 代码复制等。`;
+            document.getElementById('inputArea').value = sampleText;
+            document.getElementById('inputCount').textContent = countText(sampleText) + ' 字';
+            processText();
+        }
+
+        init();
+    </script>
+</body>
+</html>
