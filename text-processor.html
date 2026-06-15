@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文字处理工具</title>
+    <meta name="version" content="v1.2.0 | 2025-06-15">
     <style>
         :root {
             --bg: #1e1e2e;
@@ -246,16 +247,48 @@
             display: flex;
             flex: 1;
             min-height: 0;
-            gap: 1px;
+            gap: 0;
             background: var(--border);
         }
 
         .panel {
-            flex: 1;
+            flex: none;
+            width: calc(50% - 3px);
             display: flex;
             flex-direction: column;
             background: var(--surface);
             min-width: 0;
+        }
+
+        .split-divider {
+            width: 6px;
+            background: var(--border);
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background var(--transition);
+            position: relative;
+        }
+
+        .split-divider:hover,
+        .split-divider.active {
+            background: var(--accent);
+        }
+
+        .split-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 32px;
+            background: var(--text-secondary);
+            border-radius: 1px;
+            opacity: 0.5;
+        }
+
+        .split-divider:hover::after {
+            opacity: 0.8;
         }
 
         .panel-header {
@@ -419,8 +452,12 @@
                 flex-direction: column;
             }
             .panel {
-                flex: none;
+                flex: auto;
+                width: 100% !important;
                 height: 50%;
+            }
+            .split-divider {
+                display: none;
             }
         }
     </style>
@@ -428,13 +465,16 @@
 <body>
     <!-- 顶部工具栏 -->
     <div class="toolbar">
-        <span class="title">📝 文字处理工具</span>
-        <button class="btn accent" onclick="processText()" title="处理文字">⚡ 处理</button>
+        <span class="title">📝 文字处理工具 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">v1.2.0 / 2025-06-15</span></span>
         <button class="btn" onclick="copyHTML()" title="复制HTML代码">📋 复制HTML</button>
         <button class="btn" onclick="copyText()" title="复制纯文本">📄 复制文本</button>
         <span class="sep"></span>
         <button class="btn" id="settingsBtn" onclick="toggleSettings()">⚙️ 设置</button>
         <button class="btn danger" onclick="clearAll()">🗑️ 清空</button>
+        <span class="sep"></span>
+        <button class="btn" onclick="exportRules()" title="导出规则为JSON文件">📤 导出规则</button>
+        <button class="btn" onclick="document.getElementById('importFileInput').click()" title="从JSON文件导入规则">📥 导入规则</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importRules(event)">
         <span class="sep"></span>
         <select id="themeSelect" class="btn" style="cursor:pointer;appearance:auto;padding-right:28px;" onchange="onThemeChange(this.value)">
             <option value="dark">🌙 深色</option>
@@ -454,6 +494,11 @@
             段落间距
             <input type="range" id="paragraphSpacing" min="0" max="2" step="0.1" value="0.8" oninput="updatePreviewSettings()">
             <span id="spacingVal">0.8em</span>
+        </label>
+        <label>
+            首行缩进
+            <input type="range" id="textIndent" min="0" max="4" step="0.1" value="0" oninput="updatePreviewSettings()">
+            <span id="indentVal">0em</span>
         </label>
         <label>
             高亮颜色
@@ -476,6 +521,23 @@
                 <button class="btn-sm" onclick="addRule()">+ 添加</button>
             </div>
         </div>
+        <span class="sep" style="background:var(--border);width:1px;height:24px;margin:0 8px;"></span>
+        <div class="rule-group" style="flex-direction:column;align-items:flex-start;gap:6px;">
+            <span style="font-size:13px;color:var(--text-secondary);">正则表达式规则</span>
+            <div id="regexRulesList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <!-- 动态渲染 -->
+            </div>
+            <div class="add-rule-form">
+                <input type="text" id="newRegexPattern" placeholder="例如：\d+ 匹配数字、第.+章" style="width:160px;" title="输入正则表达式，如 \d+ 匹配数字、第.+章 匹配章节名、[A-Z]+\s 匹配大写单词">
+                <select id="newRegexStyle">
+                    <option value="bold">加粗</option>
+                    <option value="big">加大</option>
+                    <option value="bold-big">加粗+加大</option>
+                    <option value="color">高亮颜色</option>
+                </select>
+                <button class="btn-sm" onclick="addRegexRule()">+ 添加</button>
+            </div>
+        </div>
     </div>
 
     <!-- 主内容区：左输入 / 右预览 -->
@@ -491,8 +553,10 @@
             </div>
         </div>
 
+        <div class="split-divider" id="panelDivider"></div>
+
         <!-- 右侧预览 -->
-        <div class="panel">
+        <div class="panel" id="rightPanel">
             <div class="panel-header">
                 <span>👁️ 预览</span>
                 <span class="char-count" id="previewCount">0 字</span>
@@ -544,17 +608,23 @@
         function updatePreviewSettings() {
             const fontSize = document.getElementById('previewFontSize').value;
             const spacing = document.getElementById('paragraphSpacing').value;
+            const indent = document.getElementById('textIndent').value;
             const color = document.getElementById('highlightColor').value;
 
             document.getElementById('fontSizeVal').textContent = fontSize + 'px';
             document.getElementById('spacingVal').textContent = spacing + 'em';
+            document.getElementById('indentVal').textContent = indent + 'em';
 
             const preview = document.getElementById('previewArea');
             preview.style.fontSize = fontSize + 'px';
             preview.querySelectorAll('p').forEach(p => {
                 p.style.marginBottom = spacing + 'em';
+                p.style.textIndent = indent + 'em';
             });
             preview.querySelectorAll('.highlight-color').forEach(el => {
+                el.style.color = color;
+            });
+            preview.querySelectorAll('h2').forEach(el => {
                 el.style.color = color;
             });
         }
@@ -608,6 +678,142 @@
             localStorage.setItem('textProcessorRules', JSON.stringify(rules));
         }
 
+        // ==================== 正则规则管理 ====================
+        const defaultRegexRules = [];
+
+        let regexRules = JSON.parse(localStorage.getItem('textProcessorRegexRules')) || [...defaultRegexRules];
+
+        function renderRegexRules() {
+            const container = document.getElementById('regexRulesList');
+            container.innerHTML = regexRules.map((r, i) => {
+                const styleLabel = {
+                    'bold': '加粗',
+                    'big': '加大',
+                    'bold-big': '加粗+加大',
+                    'color': '高亮颜色'
+                }[r.style] || r.style;
+                return `<div class="rule-item">
+                    <code style="font-size:11px;color:var(--accent);">${escapeHTML(r.pattern)}</code>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRegexRule(${i})" title="删除规则">✕</span>
+                </div>`;
+            }).join('');
+            if (regexRules.length === 0) {
+                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无正则规则，例如：\\d+ 匹配数字</span>';
+            }
+        }
+
+        function addRegexRule() {
+            const pattern = document.getElementById('newRegexPattern').value.trim();
+            const style = document.getElementById('newRegexStyle').value;
+            if (!pattern) return;
+            // 验证正则是否合法
+            try {
+                new RegExp(pattern);
+            } catch (e) {
+                showToast('❌ 正则表达式不合法: ' + e.message);
+                return;
+            }
+            // 避免重复
+            if (regexRules.some(r => r.pattern === pattern && r.style === style)) {
+                showToast('该正则规则已存在');
+                return;
+            }
+            regexRules.push({ pattern, style });
+            saveRegexRules();
+            renderRegexRules();
+            document.getElementById('newRegexPattern').value = '';
+            processText();
+            showToast('正则规则已添加');
+        }
+
+        function removeRegexRule(index) {
+            regexRules.splice(index, 1);
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+        }
+
+        function saveRegexRules() {
+            localStorage.setItem('textProcessorRegexRules', JSON.stringify(regexRules));
+        }
+
+        // ==================== 规则导入/导出 ====================
+        function exportRules() {
+            const data = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                rules: rules,
+                regexRules: regexRules
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'text-processor-rules-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('✅ 规则已导出');
+        }
+
+        function importRules(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.rules || !data.regexRules) {
+                        showToast('❌ 文件格式不正确');
+                        return;
+                    }
+                    // 合并还是替换？这里采用替换
+                    rules = data.rules;
+                    regexRules = data.regexRules;
+                    saveRules();
+                    saveRegexRules();
+                    renderRules();
+                    renderRegexRules();
+                    processText();
+                    showToast('✅ 已导入 ' + rules.length + ' 条关键词规则 + ' + regexRules.length + ' 条正则规则');
+                } catch (err) {
+                    showToast('❌ 文件解析失败: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // 重置以便重复选择同一文件
+        }
+
+        function applyRegexRules(text) {
+            let processed = text;
+            regexRules.forEach(rule => {
+                try {
+                    const regex = new RegExp(rule.pattern, 'g');
+                    let replacement;
+                    switch (rule.style) {
+                        case 'bold':
+                            replacement = '<span class="highlight-bold">$&</span>';
+                            break;
+                        case 'big':
+                            replacement = '<h2>$&</h2>';
+                            break;
+                        case 'bold-big':
+                            replacement = '<h2>$&</h2>';
+                            break;
+                        case 'color':
+                            replacement = '<span class="highlight-color">$&</span>';
+                            break;
+                        default:
+                            replacement = '$&';
+                    }
+                    processed = processed.replace(regex, replacement);
+                } catch (e) {
+                    // 跳过无效正则
+                }
+            });
+            return processed;
+        }
+
         // ==================== 文字处理核心 ====================
         function processText() {
             const input = document.getElementById('inputArea').value;
@@ -652,6 +858,9 @@
         function applyRules(text) {
             // 先对原始文本进行 HTML 转义
             let processed = escapeHTML(text);
+
+            // 先应用正则规则（在转义后的文本上）
+            processed = applyRegexRules(processed);
 
             // 按关键词长度降序排列，避免短关键词匹配到长关键词的一部分
             const sortedRules = [...rules].sort((a, b) => b.keyword.length - a.keyword.length);
@@ -803,6 +1012,59 @@
             document.removeEventListener('mouseup', stopResize);
         }
 
+        // ==================== 面板分割线拖拽 ====================
+        const panelDivider = document.getElementById('panelDivider');
+        const leftPanel = panelDivider.previousElementSibling;
+        const rightPanel = document.getElementById('rightPanel');
+        let isSplitting = false;
+        let splitStartX = 0;
+        let leftStartWidth = 0;
+        let rightStartWidth = 0;
+
+        panelDivider.addEventListener('mousedown', function (e) {
+            isSplitting = true;
+            splitStartX = e.clientX;
+            leftStartWidth = leftPanel.offsetWidth;
+            rightStartWidth = rightPanel.offsetWidth;
+            panelDivider.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onSplit);
+            document.addEventListener('mouseup', stopSplit);
+            e.preventDefault();
+        });
+
+        function onSplit(e) {
+            if (!isSplitting) return;
+            const dx = e.clientX - splitStartX;
+            const containerWidth = leftPanel.parentElement.offsetWidth;
+            const minPanelWidth = 200;
+
+            let newLeftWidth = leftStartWidth + dx;
+            let newRightWidth = rightStartWidth - dx;
+
+            if (newLeftWidth < minPanelWidth) {
+                newLeftWidth = minPanelWidth;
+                newRightWidth = containerWidth - minPanelWidth - 6; // 6 = divider width
+            }
+            if (newRightWidth < minPanelWidth) {
+                newRightWidth = minPanelWidth;
+                newLeftWidth = containerWidth - minPanelWidth - 6;
+            }
+
+            leftPanel.style.width = newLeftWidth + 'px';
+            rightPanel.style.width = newRightWidth + 'px';
+        }
+
+        function stopSplit() {
+            isSplitting = false;
+            panelDivider.classList.remove('active');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onSplit);
+            document.removeEventListener('mouseup', stopSplit);
+        }
+
         // ==================== 主题切换 ====================
         const THEME_KEY = 'textProcessorTheme';
         let themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -841,10 +1103,6 @@
 
         // ==================== 键盘快捷键 ====================
         document.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                processText();
-            }
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 copyHTML();
@@ -855,6 +1113,8 @@
         function init() {
             initTheme();
             renderRules();
+            renderRegexRules();
+
             // 加载示例文本
             const sampleText = `这是一段示例文字，用于演示文字处理工具的功能。
 
