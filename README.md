@@ -3,6 +3,7 @@
 > 配合 [PoxenStudio/mybooks](https://github.com/PoxenStudio/mybooks) 项目使用，用于快速处理图书简介文本，一键生成 HTML 格式。
 
 一个纯前端、离线可用的 HTML 工具，专为书籍简介等文本的快速格式化而设计。它通过关键词高亮、正则匹配和实时预览，将纯文本高效转换为结构清晰的 HTML 代码。
+最新增强版文件名为book-editor-pro.html
 
 ![版本](https://img.shields.io/badge/version-v2.0.0-blue)
 ![许可证](https://img.shields.io/badge/license-MIT-green)
