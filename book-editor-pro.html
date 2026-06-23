@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文字处理工具</title>
-    <meta name="version" content="v1.2.0 | 2025-06-15">
+    <title>📚 书籍简介增强版 · 文字处理工具</title>
+    <meta name="version" content="v2.0.1 | 2026-06-23">
     <style>
+        /* ========== CSS 变量 & 主题 ========== */
         :root {
             --bg: #1e1e2e;
             --surface: #282840;
@@ -20,34 +21,29 @@
             --on-accent: #1e1e2e;
             --code-bg: #181825;
             --placeholder: #585b70;
-            --scrollbar-hover: #585b70;
             --radius: 10px;
-            --transition: 0.2s ease;
+            --transition: 0.25s ease;
+            --shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
 
-        /* 浅色主题 */
         [data-theme="light"] {
-            --bg: #f5f5f5;
+            --bg: #f5f5f7;
             --surface: #ffffff;
             --surface2: #eef0f4;
-            --border: #d8dae0;
-            --text: #2c2c2c;
-            --text-secondary: #6b6b7b;
+            --border: #d0d2d8;
+            --text: #1e1e2a;
+            --text-secondary: #5a5a6e;
             --accent: #3b6ef0;
             --accent2: #2e9e5c;
-            --danger: #e04550;
-            --warning: #e89520;
+            --danger: #d63a4a;
+            --warning: #d4831a;
             --on-accent: #ffffff;
             --code-bg: #f0f1f4;
-            --placeholder: #a0a4b0;
-            --scrollbar-hover: #b0b4c0;
+            --placeholder: #989aae;
+            --shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -57,30 +53,46 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: background var(--transition), color var(--transition);
         }
 
-        /* 顶部工具栏 */
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--placeholder); }
+
+        /* ========== 顶部工具栏 ========== */
         .toolbar {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
+            gap: 8px;
+            padding: 8px 16px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             flex-wrap: wrap;
+            transition: background var(--transition);
         }
 
         .toolbar .title {
             font-size: 18px;
             font-weight: 700;
             color: var(--accent);
-            margin-right: 16px;
+            margin-right: 12px;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toolbar .title small {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
         }
 
         .toolbar .btn {
-            padding: 7px 16px;
+            padding: 6px 14px;
             border: 1px solid var(--border);
             border-radius: 6px;
             background: var(--surface2);
@@ -89,43 +101,18 @@
             font-size: 13px;
             transition: all var(--transition);
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
+        .toolbar .btn:hover { background: var(--border); border-color: var(--accent); }
+        .toolbar .btn.accent { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+        .toolbar .btn.accent:hover { opacity: 0.85; }
+        .toolbar .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+        .toolbar .btn.danger:hover { background: var(--danger); color: var(--on-accent); }
+        .toolbar .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 
-        .toolbar .btn:hover {
-            background: var(--border);
-            border-color: var(--accent);
-        }
-
-        .toolbar .btn.accent {
-            background: var(--accent);
-            color: var(--on-accent);
-            border-color: var(--accent);
-            font-weight: 600;
-        }
-
-        .toolbar .btn.accent:hover {
-            opacity: 0.85;
-        }
-
-        .toolbar .btn.danger {
-            background: transparent;
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .toolbar .btn.danger:hover {
-            background: var(--danger);
-            color: var(--on-accent);
-        }
-
-        .toolbar .sep {
-            width: 1px;
-            height: 24px;
-            background: var(--border);
-            margin: 0 4px;
-        }
-
-        /* 设置面板 */
+        /* ========== 设置面板 ========== */
         .settings-panel {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -133,13 +120,11 @@
             display: none;
             flex-shrink: 0;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 14px 24px;
             align-items: center;
+            transition: background var(--transition);
         }
-
-        .settings-panel.visible {
-            display: flex;
-        }
+        .settings-panel.visible { display: flex; }
 
         .settings-panel label {
             font-size: 13px;
@@ -149,108 +134,43 @@
             gap: 6px;
             white-space: nowrap;
         }
+        .settings-panel input[type="range"] { width: 80px; accent-color: var(--accent); }
+        .settings-panel input[type="color"] { width: 32px; height: 24px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: transparent; }
+        .settings-panel input[type="number"] { width: 60px; padding: 4px 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 13px; }
 
-        .settings-panel input[type="range"] {
-            width: 80px;
-            accent-color: var(--accent);
-        }
-
-        .settings-panel input[type="color"] {
-            width: 32px;
-            height: 24px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: pointer;
-            background: transparent;
-        }
-
-        .settings-panel input[type="number"] {
-            width: 60px;
-            padding: 4px 6px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text);
-            font-size: 13px;
-        }
-
-        .settings-panel .rule-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .settings-panel .rule-item {
+        .rule-group { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+        .rule-group .rule-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .rule-item {
             display: flex;
             align-items: center;
             gap: 4px;
             background: var(--surface2);
-            padding: 4px 10px;
-            border-radius: 6px;
+            padding: 3px 10px 3px 12px;
+            border-radius: 20px;
             font-size: 12px;
+            border: 1px solid var(--border);
         }
+        .rule-item .remove-rule { cursor: pointer; color: var(--danger); font-weight: bold; margin-left: 4px; }
+        .rule-item .remove-rule:hover { opacity: 0.8; }
+        .rule-item .rule-toggle { cursor: pointer; margin-right: 4px; font-size: 14px; }
 
-        .settings-panel .rule-item .remove-rule {
-            cursor: pointer;
-            color: var(--danger);
-            font-weight: bold;
-            margin-left: 4px;
-        }
-
-        .settings-panel .rule-item .remove-rule:hover {
-            color: var(--danger);
-            opacity: 0.8;
-        }
-
-        .text-muted {
-            color: var(--placeholder);
-        }
-
-        .settings-panel .add-rule-form {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .settings-panel .add-rule-form input {
+        .add-rule-form { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .add-rule-form input, .add-rule-form select {
             padding: 4px 8px;
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: 4px;
             color: var(--text);
             font-size: 12px;
-            width: 100px;
         }
+        .add-rule-form input { width: 110px; }
+        .add-rule-form .btn-sm { padding: 4px 12px; font-size: 12px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+        .add-rule-form .btn-sm:hover { opacity: 0.85; }
 
-        .settings-panel .add-rule-form select {
-            padding: 4px 6px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text);
-            font-size: 12px;
-        }
+        .text-muted { color: var(--placeholder); }
 
-        .settings-panel .add-rule-form .btn-sm {
-            padding: 4px 10px;
-            font-size: 12px;
-            border: 1px solid var(--accent);
-            border-radius: 4px;
-            background: var(--accent);
-            color: var(--on-accent);
-            cursor: pointer;
-        }
-
-        /* 主内容区 */
-        .main-content {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            gap: 0;
-            background: var(--border);
-        }
-
+        /* ========== 主区域 ========== */
+        .main-content { display: flex; flex: 1; min-height: 0; gap: 0; background: var(--border); }
         .panel {
             flex: none;
             width: calc(50% - 3px);
@@ -258,8 +178,8 @@
             flex-direction: column;
             background: var(--surface);
             min-width: 0;
+            transition: background var(--transition);
         }
-
         .split-divider {
             width: 6px;
             background: var(--border);
@@ -268,119 +188,58 @@
             transition: background var(--transition);
             position: relative;
         }
-
-        .split-divider:hover,
-        .split-divider.active {
-            background: var(--accent);
-        }
-
+        .split-divider:hover, .split-divider.active { background: var(--accent); }
         .split-divider::after {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 2px;
-            height: 32px;
+            width: 2px; height: 32px;
             background: var(--text-secondary);
-            border-radius: 1px;
-            opacity: 0.5;
-        }
-
-        .split-divider:hover::after {
-            opacity: 0.8;
+            border-radius: 2px;
+            opacity: 0.4;
         }
 
         .panel-header {
-            padding: 8px 14px;
+            padding: 6px 14px;
             font-size: 12px;
             font-weight: 600;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-
-        .panel-header .char-count {
-            font-weight: normal;
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-
-        .panel-body {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-            min-height: 0;
-        }
-
+        .panel-header .char-count { font-weight: normal; font-size: 11px; }
+        .panel-body { flex: 1; padding: 14px; overflow-y: auto; min-height: 0; }
         .panel-body textarea {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background: transparent;
-            border: none;
-            outline: none;
-            resize: none;
+            border: none; outline: none; resize: none;
             color: var(--text);
-            font-size: 15px;
-            line-height: 1.8;
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-size: 15px; line-height: 1.8;
+            font-family: inherit;
         }
+        .panel-body textarea::placeholder { color: var(--placeholder); }
 
-        .panel-body textarea::placeholder {
-            color: var(--placeholder);
-        }
+        .preview-content { font-size: 15px; line-height: 1.8; word-break: break-word; }
+        .preview-content p { margin-bottom: 0.8em; }
 
-        .preview-content {
-            font-size: 15px;
-            line-height: 1.8;
-            word-break: break-word;
-        }
-
-        .preview-content p {
-            margin-bottom: 0.8em;
-        }
-
-        .preview-content .highlight-bold {
-            font-weight: bold;
-        }
-
-        .preview-content h2 {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin: 0.5em 0;
-            color: inherit;
-            display: block;
-        }
-
-        .preview-content .highlight-color {
-            color: #f9e2af;
-        }
-
-        /* 底部 HTML 代码区 */
+        /* ========== 底部 HTML 面板 ========== */
         .bottom-panel {
             flex-shrink: 0;
             background: var(--surface);
             border-top: 1px solid var(--border);
+            transition: background var(--transition);
         }
-
-        .bottom-panel .panel-header {
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .bottom-panel .panel-header:hover {
-            background: var(--surface2);
-        }
-
+        .bottom-panel .panel-header { cursor: pointer; user-select: none; }
+        .bottom-panel .panel-header:hover { background: var(--surface2); }
         .bottom-panel .code-area {
-            padding: 14px 16px;
+            padding: 12px 16px;
             background: var(--code-bg);
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
             font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
             font-size: 13px;
@@ -388,94 +247,81 @@
             color: var(--accent2);
             white-space: pre-wrap;
             word-break: break-all;
+            transition: max-height 0.2s;
         }
-
-        .bottom-panel.collapsed .code-area {
-            display: none;
-        }
-
+        .bottom-panel.collapsed .code-area { display: none; }
         .bottom-panel .resize-handle {
             height: 4px;
             background: var(--border);
             cursor: ns-resize;
             transition: background var(--transition);
         }
+        .bottom-panel .resize-handle:hover { background: var(--accent); }
 
-        .bottom-panel .resize-handle:hover {
-            background: var(--accent);
-        }
-
-        /* 滚动条 */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--scrollbar-hover);
-        }
-
-        /* Toast */
+        /* ========== Toast ========== */
         .toast {
             position: fixed;
-            bottom: 24px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--accent2);
-            color: var(--on-accent);
-            padding: 10px 24px;
-            border-radius: 8px;
+            background: var(--surface2);
+            color: var(--text);
+            padding: 10px 28px;
+            border-radius: 40px;
             font-size: 13px;
-            font-weight: 600;
-            z-index: 100;
+            font-weight: 500;
+            z-index: 200;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
             pointer-events: none;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(4px);
         }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        .toast.show {
-            opacity: 1;
+        /* ========== 拖放区域 ========== */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            color: var(--placeholder);
+            transition: all var(--transition);
+            margin-bottom: 12px;
+            cursor: pointer;
         }
+        .drop-zone.dragover { border-color: var(--accent); background: var(--surface2); }
 
-        /* 响应式 */
+        /* ========== 响应式 ========== */
         @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .panel {
-                flex: auto;
-                width: 100% !important;
-                height: 50%;
-            }
-            .split-divider {
-                display: none;
-            }
+            .main-content { flex-direction: column; }
+            .panel { flex: auto; width: 100% !important; height: 45%; }
+            .split-divider { display: none; }
+            .toolbar .title small { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- 顶部工具栏 -->
+
+    <!-- ===== Toast ===== -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ===== 工具栏 ===== -->
     <div class="toolbar">
-        <span class="title">📝 文字处理工具 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">v1.2.0 / 2025-06-15</span></span>
-        <button class="btn" onclick="copyHTML()" title="复制HTML代码">📋 复制HTML</button>
-        <button class="btn" onclick="copyText()" title="复制纯文本">📄 复制文本</button>
+        <span class="title">📚 书籍简介增强版 <small>v2.0.1</small></span>
+        <button class="btn" onclick="copyHTML()" title="复制生成的HTML代码">📋 复制HTML</button>
+        <button class="btn" onclick="copyText()" title="复制预览区纯文本">📄 复制文本</button>
         <span class="sep"></span>
-        <button class="btn" id="settingsBtn" onclick="toggleSettings()">⚙️ 设置</button>
+        <button class="btn" onclick="toggleSettings()">⚙️ 设置</button>
+        <button class="btn" onclick="insertBookTemplate()">📖 插入模板</button>
         <button class="btn danger" onclick="clearAll()">🗑️ 清空</button>
         <span class="sep"></span>
-        <button class="btn" onclick="exportRules()" title="导出规则为JSON文件">📤 导出规则</button>
-        <button class="btn" onclick="document.getElementById('importFileInput').click()" title="从JSON文件导入规则">📥 导入规则</button>
+        <button class="btn" onclick="exportRules()">📤 导出规则</button>
+        <button class="btn" onclick="document.getElementById('importFileInput').click()">📥 导入规则</button>
         <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importRules(event)">
         <span class="sep"></span>
+        <button class="btn" onclick="resetSample()">🔄 示例</button>
         <select id="themeSelect" class="btn" style="cursor:pointer;appearance:auto;padding-right:28px;" onchange="onThemeChange(this.value)">
             <option value="dark">🌙 深色</option>
             <option value="light">☀️ 浅色</option>
@@ -483,79 +329,70 @@
         </select>
     </div>
 
-    <!-- 设置面板 -->
+    <!-- ===== 设置面板 ===== -->
     <div class="settings-panel" id="settingsPanel">
-        <label>
-            预览字号
-            <input type="range" id="previewFontSize" min="12" max="28" value="15" oninput="updatePreviewSettings()">
-            <span id="fontSizeVal">15px</span>
-        </label>
-        <label>
-            段落间距
-            <input type="range" id="paragraphSpacing" min="0" max="2" step="0.1" value="0.8" oninput="updatePreviewSettings()">
-            <span id="spacingVal">0.8em</span>
-        </label>
-        <label>
-            首行缩进
-            <input type="range" id="textIndent" min="0" max="4" step="0.1" value="0" oninput="updatePreviewSettings()">
-            <span id="indentVal">0em</span>
-        </label>
-        <label>
-            高亮颜色
-            <input type="color" id="highlightColor" value="#f9e2af" onchange="updatePreviewSettings()">
-        </label>
-        <span class="sep" style="background:var(--border);width:1px;height:24px;margin:0 8px;"></span>
-        <div class="rule-group" style="flex-direction:column;align-items:flex-start;gap:6px;">
-            <span style="font-size:13px;color:var(--text-secondary);">加粗加大的关键词</span>
-            <div id="rulesList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                <!-- 动态渲染 -->
-            </div>
-            <div class="add-rule-form">
-                <input type="text" id="newKeyword" placeholder="输入关键词">
-                <select id="newStyle">
-                    <option value="bold">加粗</option>
-                    <option value="big">加大</option>
-                    <option value="bold-big">加粗+加大</option>
-                    <option value="color">高亮颜色</option>
-                </select>
-                <button class="btn-sm" onclick="addRule()">+ 添加</button>
-            </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;">
+            <label>预览字号 <input type="range" id="previewFontSize" min="12" max="28" value="15" oninput="updatePreviewSettings()"><span id="fontSizeVal">15px</span></label>
+            <label>段间距 <input type="range" id="paragraphSpacing" min="0" max="2" step="0.1" value="0.8" oninput="updatePreviewSettings()"><span id="spacingVal">0.8em</span></label>
+            <label>首行缩进 <input type="range" id="textIndent" min="0" max="4" step="0.1" value="0" oninput="updatePreviewSettings()"><span id="indentVal">0em</span></label>
+            <label>高亮色 <input type="color" id="highlightColor" value="#f9e2af" onchange="updatePreviewSettings()"></label>
         </div>
-        <span class="sep" style="background:var(--border);width:1px;height:24px;margin:0 8px;"></span>
-        <div class="rule-group" style="flex-direction:column;align-items:flex-start;gap:6px;">
-            <span style="font-size:13px;color:var(--text-secondary);">正则表达式规则</span>
-            <div id="regexRulesList" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                <!-- 动态渲染 -->
+
+        <div style="display:flex;flex-wrap:wrap;gap:14px 30px;width:100%;border-top:1px solid var(--border);padding-top:10px;">
+            <!-- 关键词规则 -->
+            <div class="rule-group">
+                <span style="font-size:13px;color:var(--text-secondary);">🔑 关键词规则</span>
+                <div class="rule-row" id="rulesList"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="newKeyword" placeholder="关键词">
+                    <select id="newStyle">
+                        <option value="bold">加粗</option>
+                        <option value="big">加大</option>
+                        <option value="bold-big">加粗+加大</option>
+                        <option value="color">高亮</option>
+                    </select>
+                    <button class="btn-sm" onclick="addRule()">+ 添加</button>
+                    <button class="btn-sm" style="background:var(--danger);border-color:var(--danger);" onclick="clearAllRules()">清空</button>
+                </div>
             </div>
-            <div class="add-rule-form">
-                <input type="text" id="newRegexPattern" placeholder="例如：\d+ 匹配数字、第.+章" style="width:160px;" title="输入正则表达式，如 \d+ 匹配数字、第.+章 匹配章节名、[A-Z]+\s 匹配大写单词">
-                <select id="newRegexStyle">
-                    <option value="bold">加粗</option>
-                    <option value="big">加大</option>
-                    <option value="bold-big">加粗+加大</option>
-                    <option value="color">高亮颜色</option>
-                </select>
-                <button class="btn-sm" onclick="addRegexRule()">+ 添加</button>
+
+            <!-- 正则规则 -->
+            <div class="rule-group">
+                <span style="font-size:13px;color:var(--text-secondary);">🧩 正则规则</span>
+                <div class="rule-row" id="regexRulesList"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="newRegexPattern" placeholder="例如: \d+ 或 第.+章" style="width:150px;">
+                    <select id="newRegexStyle">
+                        <option value="bold">加粗</option>
+                        <option value="big">加大</option>
+                        <option value="bold-big">加粗+加大</option>
+                        <option value="color">高亮</option>
+                    </select>
+                    <button class="btn-sm" onclick="addRegexRule()">+ 添加</button>
+                    <button class="btn-sm" style="background:var(--danger);border-color:var(--danger);" onclick="clearAllRegexRules()">清空</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 主内容区：左输入 / 右预览 -->
+    <!-- ===== 主区域 ===== -->
     <div class="main-content">
-        <!-- 左侧输入 -->
         <div class="panel">
             <div class="panel-header">
                 <span>📥 输入文字</span>
                 <span class="char-count" id="inputCount">0 字</span>
             </div>
-            <div class="panel-body">
-                <textarea id="inputArea" placeholder="在此粘贴或输入文字...&#10;&#10;每段之间用空行分隔，会自动添加 &lt;p&gt; 标签" oninput="onInputChange()"></textarea>
+            <div class="panel-body" id="leftPanelBody">
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    📂 拖拽 .txt 文件到此处，或点击上传
+                </div>
+                <input type="file" id="fileInput" accept=".txt,.md" style="display:none;" onchange="handleFileUpload(event)">
+                <textarea id="inputArea" placeholder="在此粘贴或输入文字...&#10;每段之间用空行分隔，会自动添加 &lt;p&gt; 标签" oninput="onInputChange()"></textarea>
             </div>
         </div>
 
         <div class="split-divider" id="panelDivider"></div>
 
-        <!-- 右侧预览 -->
         <div class="panel" id="rightPanel">
             <div class="panel-header">
                 <span>👁️ 预览</span>
@@ -569,190 +406,197 @@
         </div>
     </div>
 
-    <!-- 底部 HTML 代码 -->
+    <!-- ===== 底部 HTML 面板 ===== -->
     <div class="bottom-panel" id="bottomPanel">
         <div class="resize-handle" id="resizeHandle" onmousedown="startResize(event)"></div>
         <div class="panel-header" onclick="toggleBottom()">
             <span>💻 HTML 代码</span>
             <span id="bottomToggleIcon">▼</span>
         </div>
-        <div class="code-area" id="codeArea">
-            <span class="text-muted">处理后的 HTML 代码将在此显示...</span>
-        </div>
+        <div class="code-area" id="codeArea"><span class="text-muted">处理后的 HTML 代码将在此显示...</span></div>
     </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
-
     <script>
-        // ==================== 默认规则 ====================
-        const defaultRules = [
-            { keyword: '重要', style: 'bold' },
-            { keyword: '注意', style: 'bold-big' },
-            { keyword: '警告', style: 'color' },
-            { keyword: '提示', style: 'bold' },
-            { keyword: '关键', style: 'bold-big' },
+        // ============================================================
+        //  数据层：规则、存储
+        // ============================================================
+
+        const DEFAULT_RULES = [
+            { keyword: '重要', style: 'bold', enabled: true },
+            { keyword: '注意', style: 'bold-big', enabled: true },
+            { keyword: '警告', style: 'color', enabled: true },
+            { keyword: '提示', style: 'bold', enabled: true },
+            { keyword: '关键', style: 'bold-big', enabled: true },
         ];
 
-        let rules = JSON.parse(localStorage.getItem('textProcessorRules')) || [...defaultRules];
+        let rules = JSON.parse(localStorage.getItem('textProcessorRules_v2')) || DEFAULT_RULES.map(r => ({ ...r }));
+        let regexRules = JSON.parse(localStorage.getItem('textProcessorRegexRules_v2')) || [];
 
-        // ==================== 设置面板状态 ====================
-        let settingsVisible = false;
+        // ============================================================
+        //  DOM 引用
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const inputArea = $('inputArea');
+        const previewArea = $('previewArea');
+        const codeArea = $('codeArea');
+        const inputCount = $('inputCount');
+        const previewCount = $('previewCount');
 
-        function toggleSettings() {
-            settingsVisible = !settingsVisible;
-            document.getElementById('settingsPanel').classList.toggle('visible', settingsVisible);
-            document.getElementById('settingsBtn').textContent = settingsVisible ? '⚙️ 隐藏设置' : '⚙️ 设置';
+        // ============================================================
+        //  工具函数
+        // ============================================================
+        function escapeHTML(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
         }
 
-        function updatePreviewSettings() {
-            const fontSize = document.getElementById('previewFontSize').value;
-            const spacing = document.getElementById('paragraphSpacing').value;
-            const indent = document.getElementById('textIndent').value;
-            const color = document.getElementById('highlightColor').value;
-
-            document.getElementById('fontSizeVal').textContent = fontSize + 'px';
-            document.getElementById('spacingVal').textContent = spacing + 'em';
-            document.getElementById('indentVal').textContent = indent + 'em';
-
-            const preview = document.getElementById('previewArea');
-            preview.style.fontSize = fontSize + 'px';
-            preview.querySelectorAll('p').forEach(p => {
-                p.style.marginBottom = spacing + 'em';
-                p.style.textIndent = indent + 'em';
-            });
-            preview.querySelectorAll('.highlight-color').forEach(el => {
-                el.style.color = color;
-            });
-            preview.querySelectorAll('h2').forEach(el => {
-                el.style.color = color;
-            });
+        function countText(str) {
+            const ch = (str.match(/[\u4e00-\u9fff]/g) || []).length;
+            const en = (str.match(/[a-zA-Z0-9]+/g) || []).length;
+            return ch + en;
         }
 
-        // ==================== 规则管理 ====================
+        function showToast(msg, duration = 2200) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        // ============================================================
+        //  规则渲染
+        // ============================================================
         function renderRules() {
-            const container = document.getElementById('rulesList');
-            container.innerHTML = rules.map((r, i) => {
-                const styleLabel = {
-                    'bold': '加粗',
-                    'big': '加大',
-                    'bold-big': '加粗+加大',
-                    'color': '高亮颜色'
-                }[r.style] || r.style;
-                return `<div class="rule-item">
-                    <strong>${escapeHTML(r.keyword)}</strong>
-                    <span style="color:var(--text-secondary)">${styleLabel}</span>
-                    <span class="remove-rule" onclick="removeRule(${i})" title="删除规则">✕</span>
-                </div>`;
-            }).join('');
-            if (rules.length === 0) {
+            const container = $('rulesList');
+            if (!rules.length) {
                 container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无规则</span>';
-            }
-        }
-
-        function addRule() {
-            const keyword = document.getElementById('newKeyword').value.trim();
-            const style = document.getElementById('newStyle').value;
-            if (!keyword) return;
-            // 避免重复
-            if (rules.some(r => r.keyword === keyword && r.style === style)) {
-                showToast('该规则已存在');
                 return;
             }
-            rules.push({ keyword, style });
-            saveRules();
-            renderRules();
-            document.getElementById('newKeyword').value = '';
-            processText();
-            showToast('规则已添加');
+            container.innerHTML = rules.map((r, i) => {
+                const styleLabel = { bold: '加粗', big: '加大', 'bold-big': '加粗+加大', color: '高亮' }[r.style] || r.style;
+                const toggleIcon = r.enabled ? '✅' : '⛔';
+                return `<div class="rule-item">
+                    <span class="rule-toggle" onclick="toggleRule(${i})" title="启用/禁用">${toggleIcon}</span>
+                    <strong>${escapeHTML(r.keyword)}</strong>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRule(${i})">✕</span>
+                </div>`;
+            }).join('');
         }
 
-        function removeRule(index) {
-            rules.splice(index, 1);
-            saveRules();
-            renderRules();
-            processText();
+        function renderRegexRules() {
+            const container = $('regexRulesList');
+            if (!regexRules.length) {
+                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无正则规则，例如: \\d+ 匹配数字</span>';
+                return;
+            }
+            container.innerHTML = regexRules.map((r, i) => {
+                const styleLabel = { bold: '加粗', big: '加大', 'bold-big': '加粗+加大', color: '高亮' }[r.style] || r.style;
+                const toggleIcon = r.enabled !== false ? '✅' : '⛔';
+                return `<div class="rule-item">
+                    <span class="rule-toggle" onclick="toggleRegexRule(${i})" title="启用/禁用">${toggleIcon}</span>
+                    <code style="font-size:11px;color:var(--accent);">${escapeHTML(r.pattern)}</code>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRegexRule(${i})">✕</span>
+                </div>`;
+            }).join('');
         }
 
         function saveRules() {
-            localStorage.setItem('textProcessorRules', JSON.stringify(rules));
+            localStorage.setItem('textProcessorRules_v2', JSON.stringify(rules));
+        }
+        function saveRegexRules() {
+            localStorage.setItem('textProcessorRegexRules_v2', JSON.stringify(regexRules));
         }
 
-        // ==================== 正则规则管理 ====================
-        const defaultRegexRules = [];
+        // ---- 规则操作 ----
+        function toggleRule(idx) {
+            rules[idx].enabled = !rules[idx].enabled;
+            saveRules();
+            renderRules();
+            processText();
+        }
+        function toggleRegexRule(idx) {
+            regexRules[idx].enabled = (regexRules[idx].enabled !== false) ? false : true;
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+        }
 
-        let regexRules = JSON.parse(localStorage.getItem('textProcessorRegexRules')) || [...defaultRegexRules];
+        function removeRule(idx) {
+            rules.splice(idx, 1);
+            saveRules();
+            renderRules();
+            processText();
+            showToast('已删除规则');
+        }
+        function removeRegexRule(idx) {
+            regexRules.splice(idx, 1);
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+            showToast('已删除正则规则');
+        }
 
-        function renderRegexRules() {
-            const container = document.getElementById('regexRulesList');
-            container.innerHTML = regexRules.map((r, i) => {
-                const styleLabel = {
-                    'bold': '加粗',
-                    'big': '加大',
-                    'bold-big': '加粗+加大',
-                    'color': '高亮颜色'
-                }[r.style] || r.style;
-                return `<div class="rule-item">
-                    <code style="font-size:11px;color:var(--accent);">${escapeHTML(r.pattern)}</code>
-                    <span style="color:var(--text-secondary)">${styleLabel}</span>
-                    <span class="remove-rule" onclick="removeRegexRule(${i})" title="删除规则">✕</span>
-                </div>`;
-            }).join('');
-            if (regexRules.length === 0) {
-                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无正则规则，例如：\\d+ 匹配数字</span>';
+        function clearAllRules() {
+            if (!confirm('确定清空所有关键词规则吗？')) return;
+            rules = [];
+            saveRules();
+            renderRules();
+            processText();
+            showToast('已清空关键词规则');
+        }
+        function clearAllRegexRules() {
+            if (!confirm('确定清空所有正则规则吗？')) return;
+            regexRules = [];
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+            showToast('已清空正则规则');
+        }
+
+        function addRule() {
+            const kw = $('newKeyword').value.trim();
+            const style = $('newStyle').value;
+            if (!kw) return showToast('请输入关键词');
+            if (rules.some(r => r.keyword === kw && r.style === style)) {
+                return showToast('规则已存在');
             }
+            rules.push({ keyword: kw, style, enabled: true });
+            saveRules();
+            renderRules();
+            $('newKeyword').value = '';
+            processText();
+            showToast('✅ 规则已添加');
         }
 
         function addRegexRule() {
-            const pattern = document.getElementById('newRegexPattern').value.trim();
-            const style = document.getElementById('newRegexStyle').value;
-            if (!pattern) return;
-            // 验证正则是否合法
-            try {
-                new RegExp(pattern);
-            } catch (e) {
-                showToast('❌ 正则表达式不合法: ' + e.message);
-                return;
-            }
-            // 避免重复
+            const pattern = $('newRegexPattern').value.trim();
+            const style = $('newRegexStyle').value;
+            if (!pattern) return showToast('请输入正则表达式');
+            try { new RegExp(pattern); } catch (e) { return showToast('❌ 正则不合法: ' + e.message); }
             if (regexRules.some(r => r.pattern === pattern && r.style === style)) {
-                showToast('该正则规则已存在');
-                return;
+                return showToast('规则已存在');
             }
-            regexRules.push({ pattern, style });
+            regexRules.push({ pattern, style, enabled: true });
             saveRegexRules();
             renderRegexRules();
-            document.getElementById('newRegexPattern').value = '';
+            $('newRegexPattern').value = '';
             processText();
-            showToast('正则规则已添加');
+            showToast('✅ 正则规则已添加');
         }
 
-        function removeRegexRule(index) {
-            regexRules.splice(index, 1);
-            saveRegexRules();
-            renderRegexRules();
-            processText();
-        }
-
-        function saveRegexRules() {
-            localStorage.setItem('textProcessorRegexRules', JSON.stringify(regexRules));
-        }
-
-        // ==================== 规则导入/导出 ====================
+        // ---- 导入/导出 ----
         function exportRules() {
-            const data = {
-                version: 1,
-                exportedAt: new Date().toISOString(),
-                rules: rules,
-                regexRules: regexRules
-            };
+            const data = { version: 2, exportedAt: new Date().toISOString(), rules, regexRules };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'text-processor-rules-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.href = URL.createObjectURL(blob);
+            a.download = 'text-processor-rules-' + new Date().toISOString().slice(0,10) + '.json';
             a.click();
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(a.href);
             showToast('✅ 规则已导出');
         }
 
@@ -760,250 +604,284 @@
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data.rules || !data.regexRules) {
-                        showToast('❌ 文件格式不正确');
-                        return;
-                    }
-                    // 合并还是替换？这里采用替换
-                    rules = data.rules;
-                    regexRules = data.regexRules;
-                    saveRules();
-                    saveRegexRules();
-                    renderRules();
-                    renderRegexRules();
+                    if (!data.rules || !data.regexRules) throw new Error('格式错误');
+                    rules = data.rules.map(r => ({ ...r, enabled: r.enabled !== false }));
+                    regexRules = data.regexRules.map(r => ({ ...r, enabled: r.enabled !== false }));
+                    saveRules(); saveRegexRules();
+                    renderRules(); renderRegexRules();
                     processText();
-                    showToast('✅ 已导入 ' + rules.length + ' 条关键词规则 + ' + regexRules.length + ' 条正则规则');
+                    showToast('✅ 已导入 ' + rules.length + ' 条关键词 + ' + regexRules.length + ' 条正则规则');
                 } catch (err) {
-                    showToast('❌ 文件解析失败: ' + err.message);
+                    showToast('❌ 导入失败: ' + err.message);
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // 重置以便重复选择同一文件
+            event.target.value = '';
         }
 
-        function applyRegexRules(text) {
-            let processed = text;
-            regexRules.forEach(rule => {
-                try {
-                    const regex = new RegExp(rule.pattern, 'g');
-                    let replacement;
-                    switch (rule.style) {
-                        case 'bold':
-                            replacement = '<span class="highlight-bold">$&</span>';
-                            break;
-                        case 'big':
-                            replacement = '<h2>$&</h2>';
-                            break;
-                        case 'bold-big':
-                            replacement = '<h2>$&</h2>';
-                            break;
-                        case 'color':
-                            replacement = '<span class="highlight-color">$&</span>';
-                            break;
-                        default:
-                            replacement = '$&';
-                    }
-                    processed = processed.replace(regex, replacement);
-                } catch (e) {
-                    // 跳过无效正则
-                }
-            });
-            return processed;
-        }
-
-        // ==================== 文字处理核心 ====================
+        // ============================================================
+        //  核心处理（v2.0.1：全部使用原生标签+行内样式）
+        // ============================================================
         function processText() {
-            const input = document.getElementById('inputArea').value;
-            if (!input.trim()) {
-                document.getElementById('previewArea').innerHTML = '<p class="text-muted">请输入文字内容</p>';
-                document.getElementById('codeArea').innerHTML = '<span class="text-muted">暂无内容</span>';
-                document.getElementById('previewCount').textContent = '0 字';
+            const raw = inputArea.value;
+            if (!raw.trim()) {
+                previewArea.innerHTML = '<p class="text-muted">请输入文字内容</p>';
+                codeArea.textContent = '<!-- 暂无内容 -->';
+                previewCount.textContent = '0 字';
                 return;
             }
 
-            // 统一换行符为 \n，按连续空行分割段落
-            const normalized = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const paragraphs = normalized.split(/\n{2,}/).filter(p => p.trim() !== '');
 
             let htmlParts = [];
             paragraphs.forEach(para => {
                 const lines = para.trim().split('\n').filter(l => l.trim() !== '');
-                if (lines.length === 0) return;
+                if (!lines.length) return;
+                const escapedLines = lines.map(line => {
+                    let processed = escapeHTML(line);
 
-                // 先对每行转义，再应用规则，最后处理书名号加粗
-                const escapedLines = lines.map(line => formatBookNames(applyRules(line)));
+                    // 书名号加粗（使用原生 <b> 标签）
+                    processed = processed.replace(/《([^》]+)》/g, '<b>《$1》</b>');
 
-                // 合并段落内的多行为一行（用 <br> 连接）
-                let text = escapedLines.join('<br>');
+                    // 正则规则（使用原生标签+行内样式）
+                    regexRules.forEach(rule => {
+                        if (rule.enabled === false) return;
+                        try {
+                            const regex = new RegExp(rule.pattern, 'g');
+                            let replacement;
+                            switch (rule.style) {
+                                case 'bold':
+                                    replacement = '<b>$&</b>';
+                                    break;
+                                case 'big':
+                                    replacement = '<span style="font-size:1.3em;font-weight:400;">$&</span>';
+                                    break;
+                                case 'bold-big':
+                                    replacement = '<b style="font-size:1.3em;">$&</b>';
+                                    break;
+                                case 'color':
+                                    const highlightColor = document.getElementById('highlightColor').value || '#f9e2af';
+                                    replacement = `<span style="color:${highlightColor};">$&</span>`;
+                                    break;
+                                default:
+                                    replacement = '$&';
+                            }
+                            processed = processed.replace(regex, replacement);
+                        } catch (_) {}
+                    });
 
-                htmlParts.push(`<p>${text}</p>`);
+                    // 关键词规则（按长度降序，使用原生标签+行内样式）
+                    const sorted = [...rules].filter(r => r.enabled !== false).sort((a, b) => b.keyword.length - a.keyword.length);
+                    sorted.forEach(rule => {
+                        const escKw = escapeHTML(rule.keyword);
+                        const regex = new RegExp(escKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                        let replacement;
+                        switch (rule.style) {
+                            case 'bold':
+                                replacement = `<b>${escKw}</b>`;
+                                break;
+                            case 'big':
+                                replacement = `<span style="font-size:1.3em;font-weight:400;">${escKw}</span>`;
+                                break;
+                            case 'bold-big':
+                                replacement = `<b style="font-size:1.3em;">${escKw}</b>`;
+                                break;
+                            case 'color':
+                                const highlightColor = document.getElementById('highlightColor').value || '#f9e2af';
+                                replacement = `<span style="color:${highlightColor};">${escKw}</span>`;
+                                break;
+                            default:
+                                replacement = escKw;
+                        }
+                        processed = processed.replace(regex, replacement);
+                    });
+                    return processed;
+                });
+                htmlParts.push(`<p>${escapedLines.join('<br>')}</p>`);
             });
 
-            const html = htmlParts.join('\n');
-            const previewHtml = htmlParts.join('');
+            const finalHtml = htmlParts.join('\n');
+            previewArea.innerHTML = htmlParts.join('');
+            codeArea.textContent = finalHtml;
 
-            // 更新预览
-            const previewArea = document.getElementById('previewArea');
-            previewArea.innerHTML = previewHtml;
-            updatePreviewSettings(); // 应用字号/间距/颜色设置
-            document.getElementById('previewCount').textContent = countText(previewArea.innerText) + ' 字';
-
-            // 更新底部代码
-            document.getElementById('codeArea').textContent = html;
+            const textContent = previewArea.innerText;
+            previewCount.textContent = countText(textContent) + ' 字';
+            updatePreviewSettings();
         }
 
-        function applyRules(text) {
-            // 先对原始文本进行 HTML 转义
-            let processed = escapeHTML(text);
+        // ============================================================
+        //  预览样式更新
+        // ============================================================
+        function updatePreviewSettings() {
+            const fs = $('previewFontSize').value;
+            const sp = $('paragraphSpacing').value;
+            const indent = $('textIndent').value;
 
-            // 先应用正则规则（在转义后的文本上）
-            processed = applyRegexRules(processed);
+            $('fontSizeVal').textContent = fs + 'px';
+            $('spacingVal').textContent = sp + 'em';
+            $('indentVal').textContent = indent + 'em';
 
-            // 按关键词长度降序排列，避免短关键词匹配到长关键词的一部分
-            const sortedRules = [...rules].sort((a, b) => b.keyword.length - a.keyword.length);
-
-            sortedRules.forEach(rule => {
-                const escapedKeyword = escapeHTML(rule.keyword);
-                // 对转义后的关键词也做正则转义，确保特殊字符正确匹配
-                const regex = new RegExp(escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-
-                let replacement;
-                switch (rule.style) {
-                    case 'bold':
-                        replacement = `<span class="highlight-bold">${escapedKeyword}</span>`;
-                        break;
-                    case 'big':
-                        replacement = `<h2>${escapedKeyword}</h2>`;
-                        break;
-                    case 'bold-big':
-                        replacement = `<h2>${escapedKeyword}</h2>`;
-                        break;
-                    case 'color':
-                        replacement = `<span class="highlight-color">${escapedKeyword}</span>`;
-                        break;
-                    default:
-                        replacement = escapedKeyword;
-                }
-                processed = processed.replace(regex, replacement);
+            previewArea.style.fontSize = fs + 'px';
+            previewArea.querySelectorAll('p').forEach(p => {
+                p.style.marginBottom = sp + 'em';
+                p.style.textIndent = indent + 'em';
             });
-
-            return processed;
+            // 高亮颜色已通过行内样式直接应用，无需额外处理
         }
 
-        // ==================== 书名号自动加粗 ====================
-        function formatBookNames(text) {
-            // 匹配《...》中的内容，整体用 <b> 加粗
-            return text.replace(/《([^》]+)》/g, '<b>《$1》</b>');
-        }
-
-        function escapeHTML(str) {
-            const div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
-
-        function countText(str) {
-            // 统计中文字符+英文单词
-            const chinese = (str.match(/[\u4e00-\u9fff]/g) || []).length;
-            const english = (str.match(/[a-zA-Z0-9]+/g) || []).length;
-            return chinese + english;
-        }
-
-        // ==================== 输入实时处理（防抖） ====================
+        // ============================================================
+        //  输入事件（防抖）
+        // ============================================================
         let debounceTimer;
         function onInputChange() {
-            const input = document.getElementById('inputArea').value;
-            document.getElementById('inputCount').textContent = countText(input) + ' 字';
+            const val = inputArea.value;
+            inputCount.textContent = countText(val) + ' 字';
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(processText, 300);
+            debounceTimer = setTimeout(processText, 280);
         }
 
-        // ==================== 复制功能 ====================
+        // ============================================================
+        //  文件拖拽/上传
+        // ============================================================
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                inputArea.value = ev.target.result;
+                onInputChange();
+                showToast('✅ 已加载文件: ' + file.name);
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        const dropZone = $('dropZone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.txt') || file.name.endsWith('.md'))) {
+                const reader = new FileReader();
+                reader.onload = (ev) => { inputArea.value = ev.target.result; onInputChange(); showToast('✅ 已加载: ' + file.name); };
+                reader.readAsText(file);
+            } else {
+                showToast('⚠️ 请拖入 .txt 或 .md 文件');
+            }
+        });
+
+        // ============================================================
+        //  模板插入
+        // ============================================================
+        function insertBookTemplate() {
+            const template = `书名：《》
+作者：
+出版社：
+出版时间：
+译者：
+ISBN：
+丛书名：
+
+【内容简介】
+
+`;
+            const start = inputArea.selectionStart;
+            const end = inputArea.selectionEnd;
+            const before = inputArea.value.substring(0, start);
+            const after = inputArea.value.substring(end);
+            inputArea.value = before + template + after;
+            inputArea.selectionStart = inputArea.selectionEnd = start + template.length;
+            onInputChange();
+            showToast('📖 模板已插入');
+        }
+
+        // ============================================================
+        //  复制功能
+        // ============================================================
         function copyHTML() {
-            const html = document.getElementById('codeArea').textContent;
-            if (!html.trim() || html.includes('处理后的 HTML 代码将在此显示')) {
-                showToast('没有可复制的内容');
-                return;
-            }
-            navigator.clipboard.writeText(html).then(() => {
-                showToast('✅ HTML 代码已复制到剪贴板');
-            }).catch(() => {
-                showToast('❌ 复制失败，请手动选择复制');
-            });
+            const html = codeArea.textContent;
+            if (!html.trim() || html.includes('暂无内容')) return showToast('没有可复制的内容');
+            navigator.clipboard.writeText(html).then(() => showToast('✅ HTML 已复制')).catch(() => showToast('❌ 复制失败'));
         }
-
         function copyText() {
-            const preview = document.getElementById('previewArea');
-            const text = preview.innerText;
-            if (!text.trim() || text.includes('请输入文字内容')) {
-                showToast('没有可复制的内容');
-                return;
-            }
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('✅ 纯文本已复制到剪贴板');
-            }).catch(() => {
-                showToast('❌ 复制失败，请手动选择复制');
-            });
+            const text = previewArea.innerText;
+            if (!text.trim() || text.includes('请输入文字内容')) return showToast('没有可复制的内容');
+            navigator.clipboard.writeText(text).then(() => showToast('✅ 纯文本已复制')).catch(() => showToast('❌ 复制失败'));
         }
 
+        // ============================================================
+        //  清空 / 示例重置
+        // ============================================================
         function clearAll() {
-            document.getElementById('inputArea').value = '';
-            document.getElementById('previewArea').innerHTML = '<p class="text-muted">处理后的预览将在此显示...</p>';
-            document.getElementById('codeArea').innerHTML = '<span class="text-muted">处理后的 HTML 代码将在此显示...</span>';
-            document.getElementById('inputCount').textContent = '0 字';
-            document.getElementById('previewCount').textContent = '0 字';
+            if (!confirm('确定清空所有内容吗？')) return;
+            inputArea.value = '';
+            previewArea.innerHTML = '<p class="text-muted">处理后的预览将在此显示...</p>';
+            codeArea.textContent = '<!-- 暂无内容 -->';
+            inputCount.textContent = '0 字';
+            previewCount.textContent = '0 字';
             showToast('已清空');
         }
 
-        // ==================== Toast ====================
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+        function resetSample() {
+            const sample = `《思考的藝術》——52個思考錯誤，讓你不再只靠直覺決定一切
+
+重要：本书是德国率先击败《贾伯斯传》的著作，连续48周位居畅销榜Top 5。
+
+提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。
+
+警告：本书由全球最大商业书摘网站getAbstract创办人撰写，获《黑天鹅效应》作者塔雷伯鼎力推荐。
+
+关键功能包括：自动段落标签、关键词高亮、实时预览、HTML代码复制等。
+
+适用场景：无论是日常生活、学习、工作经营、投资理财还是爱情关系，本书指摘的52个思考错误，将让你看清自身弱点。`;
+            inputArea.value = sample;
+            onInputChange();
+            showToast('🔄 已加载示例文本');
         }
 
-        // ==================== 底部面板折叠/展开 ====================
+        // ============================================================
+        //  设置面板折叠
+        // ============================================================
+        let settingsVisible = false;
+        function toggleSettings() {
+            settingsVisible = !settingsVisible;
+            $('settingsPanel').classList.toggle('visible', settingsVisible);
+            $('settingsBtn').textContent = settingsVisible ? '⚙️ 隐藏设置' : '⚙️ 设置';
+        }
+
+        // ============================================================
+        //  底部面板折叠 / 缩放
+        // ============================================================
         let bottomCollapsed = false;
         function toggleBottom() {
             bottomCollapsed = !bottomCollapsed;
-            const panel = document.getElementById('bottomPanel');
-            panel.classList.toggle('collapsed', bottomCollapsed);
-            document.getElementById('bottomToggleIcon').textContent = bottomCollapsed ? '▶' : '▼';
+            $('bottomPanel').classList.toggle('collapsed', bottomCollapsed);
+            $('bottomToggleIcon').textContent = bottomCollapsed ? '▶' : '▼';
         }
 
-        // ==================== 底部面板拖拽缩放 ====================
-        let isResizing = false;
-        let startY = 0;
-        let startHeight = 0;
-        let codeAreaEl;
-
+        let isResizing = false, startY = 0, startHeight = 0;
         function startResize(e) {
-            isResizing = true;
-            startY = e.clientY;
-            codeAreaEl = document.getElementById('codeArea');
-            startHeight = codeAreaEl.offsetHeight;
+            isResizing = true; startY = e.clientY;
+            const el = $('codeArea');
+            startHeight = el.offsetHeight;
             document.body.style.cursor = 'ns-resize';
             document.body.style.userSelect = 'none';
-
             document.addEventListener('mousemove', onResize);
             document.addEventListener('mouseup', stopResize);
             e.preventDefault();
         }
-
         function onResize(e) {
             if (!isResizing) return;
             const dy = startY - e.clientY;
-            const newHeight = Math.max(60, Math.min(500, startHeight + dy));
-            codeAreaEl.style.maxHeight = newHeight + 'px';
+            const newH = Math.max(60, Math.min(500, startHeight + dy));
+            $('codeArea').style.maxHeight = newH + 'px';
         }
-
         function stopResize() {
             isResizing = false;
             document.body.style.cursor = '';
@@ -1012,121 +890,100 @@
             document.removeEventListener('mouseup', stopResize);
         }
 
-        // ==================== 面板分割线拖拽 ====================
-        const panelDivider = document.getElementById('panelDivider');
-        const leftPanel = panelDivider.previousElementSibling;
-        const rightPanel = document.getElementById('rightPanel');
-        let isSplitting = false;
-        let splitStartX = 0;
-        let leftStartWidth = 0;
-        let rightStartWidth = 0;
+        // ============================================================
+        //  面板分割拖拽
+        // ============================================================
+        const divider = $('panelDivider');
+        const leftPanel = divider.previousElementSibling;
+        const rightPanel = $('rightPanel');
+        let isSplitting = false, splitStartX = 0, leftStartW = 0, rightStartW = 0;
 
-        panelDivider.addEventListener('mousedown', function (e) {
+        divider.addEventListener('mousedown', function(e) {
             isSplitting = true;
             splitStartX = e.clientX;
-            leftStartWidth = leftPanel.offsetWidth;
-            rightStartWidth = rightPanel.offsetWidth;
-            panelDivider.classList.add('active');
+            leftStartW = leftPanel.offsetWidth;
+            rightStartW = rightPanel.offsetWidth;
+            divider.classList.add('active');
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
             document.addEventListener('mousemove', onSplit);
             document.addEventListener('mouseup', stopSplit);
             e.preventDefault();
         });
-
         function onSplit(e) {
             if (!isSplitting) return;
             const dx = e.clientX - splitStartX;
-            const containerWidth = leftPanel.parentElement.offsetWidth;
-            const minPanelWidth = 200;
-
-            let newLeftWidth = leftStartWidth + dx;
-            let newRightWidth = rightStartWidth - dx;
-
-            if (newLeftWidth < minPanelWidth) {
-                newLeftWidth = minPanelWidth;
-                newRightWidth = containerWidth - minPanelWidth - 6; // 6 = divider width
-            }
-            if (newRightWidth < minPanelWidth) {
-                newRightWidth = minPanelWidth;
-                newLeftWidth = containerWidth - minPanelWidth - 6;
-            }
-
-            leftPanel.style.width = newLeftWidth + 'px';
-            rightPanel.style.width = newRightWidth + 'px';
+            const containerW = leftPanel.parentElement.offsetWidth;
+            const minW = 200;
+            let lw = leftStartW + dx, rw = rightStartW - dx;
+            if (lw < minW) { lw = minW; rw = containerW - minW - 6; }
+            if (rw < minW) { rw = minW; lw = containerW - minW - 6; }
+            leftPanel.style.width = lw + 'px';
+            rightPanel.style.width = rw + 'px';
         }
-
         function stopSplit() {
             isSplitting = false;
-            panelDivider.classList.remove('active');
+            divider.classList.remove('active');
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
             document.removeEventListener('mousemove', onSplit);
             document.removeEventListener('mouseup', stopSplit);
         }
 
-        // ==================== 主题切换 ====================
-        const THEME_KEY = 'textProcessorTheme';
-        let themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        // ============================================================
+        //  主题
+        // ============================================================
+        const THEME_KEY = 'textProcessorTheme_v2';
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-        function getSystemTheme() {
-            return themeMediaQuery.matches ? 'dark' : 'light';
-        }
-
+        function getSystemTheme() { return mediaQuery.matches ? 'dark' : 'light'; }
         function applyTheme(theme) {
-            if (theme === 'system') {
-                document.documentElement.setAttribute('data-theme', getSystemTheme());
-            } else {
-                document.documentElement.setAttribute('data-theme', theme);
-            }
+            if (theme === 'system') document.documentElement.setAttribute('data-theme', getSystemTheme());
+            else document.documentElement.setAttribute('data-theme', theme);
         }
-
         function onThemeChange(theme) {
             localStorage.setItem(THEME_KEY, theme);
             applyTheme(theme);
-            document.getElementById('themeSelect').value = theme;
+            $('themeSelect').value = theme;
         }
-
-        // 监听系统主题变化（仅在"跟随系统"模式下生效）
-        themeMediaQuery.addEventListener('change', () => {
-            const saved = localStorage.getItem(THEME_KEY) || 'dark';
-            if (saved === 'system') {
-                applyTheme('system');
-            }
+        mediaQuery.addEventListener('change', () => {
+            if (localStorage.getItem(THEME_KEY) === 'system') applyTheme('system');
         });
 
         function initTheme() {
             const saved = localStorage.getItem(THEME_KEY) || 'dark';
-            document.getElementById('themeSelect').value = saved;
+            $('themeSelect').value = saved;
             applyTheme(saved);
         }
 
-        // ==================== 键盘快捷键 ====================
-        document.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                copyHTML();
-            }
+        // ============================================================
+        //  键盘快捷键
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); copyHTML(); }
         });
 
-        // ==================== 初始化 ====================
+        // ============================================================
+        //  初始化
+        // ============================================================
         function init() {
             initTheme();
             renderRules();
             renderRegexRules();
+            // 加载示例
+            const sample = `《思考的藝術》——52個思考錯誤，讓你不再只靠直覺決定一切
 
-            // 加载示例文本
-            const sampleText = `这是一段示例文字，用于演示文字处理工具的功能。
-
-重要：请注意，这个工具可以自动将文字内容转换为 HTML 格式。
+重要：本书是德国率先击败《贾伯斯传》的著作，连续48周位居畅销榜Top 5。
 
 提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。
 
-警告：请确保输入的文字内容符合你的预期格式，每段之间用空行分隔。
+警告：本书由全球最大商业书摘网站getAbstract创办人撰写，获《黑天鹅效应》作者塔雷伯鼎力推荐。
 
-关键功能包括：自动段落标签、关键词高亮、实时预览、HTML 代码复制等。`;
-            document.getElementById('inputArea').value = sampleText;
-            document.getElementById('inputCount').textContent = countText(sampleText) + ' 字';
+关键功能包括：自动段落标签、关键词高亮、实时预览、HTML代码复制等。
+
+适用场景：无论是日常生活、学习、工作经营、投资理财还是爱情关系，本书指摘的52个思考错误，将让你看清自身弱点。`;
+            inputArea.value = sample;
+            inputCount.textContent = countText(sample) + ' 字';
             processText();
         }
 
