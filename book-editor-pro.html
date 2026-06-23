@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 书籍简介增强版 · 文字处理工具</title>
+    <meta name="version" content="v2.0.0 | 2026-06-23">
+    <style>
+        /* ========== CSS 变量 & 主题 ========== */
+        :root {
+            --bg: #1e1e2e;
+            --surface: #282840;
+            --surface2: #313150;
+            --border: #3e3e5c;
+            --text: #cdd6f4;
+            --text-secondary: #a6adc8;
+            --accent: #89b4fa;
+            --accent2: #a6e3a1;
+            --danger: #f38ba8;
+            --warning: #fab387;
+            --on-accent: #1e1e2e;
+            --code-bg: #181825;
+            --placeholder: #585b70;
+            --radius: 10px;
+            --transition: 0.25s ease;
+            --shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        [data-theme="light"] {
+            --bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface2: #eef0f4;
+            --border: #d0d2d8;
+            --text: #1e1e2a;
+            --text-secondary: #5a5a6e;
+            --accent: #3b6ef0;
+            --accent2: #2e9e5c;
+            --danger: #d63a4a;
+            --warning: #d4831a;
+            --on-accent: #ffffff;
+            --code-bg: #f0f1f4;
+            --placeholder: #989aae;
+            --shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--placeholder); }
+
+        /* ========== 顶部工具栏 ========== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            transition: background var(--transition);
+        }
+
+        .toolbar .title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-right: 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toolbar .title small {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .toolbar .btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .toolbar .btn:hover { background: var(--border); border-color: var(--accent); }
+        .toolbar .btn.accent { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+        .toolbar .btn.accent:hover { opacity: 0.85; }
+        .toolbar .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+        .toolbar .btn.danger:hover { background: var(--danger); color: var(--on-accent); }
+        .toolbar .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+        /* ========== 设置面板 ========== */
+        .settings-panel {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: none;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 14px 24px;
+            align-items: center;
+            transition: background var(--transition);
+        }
+        .settings-panel.visible { display: flex; }
+
+        .settings-panel label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .settings-panel input[type="range"] { width: 80px; accent-color: var(--accent); }
+        .settings-panel input[type="color"] { width: 32px; height: 24px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: transparent; }
+        .settings-panel input[type="number"] { width: 60px; padding: 4px 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 13px; }
+
+        .rule-group { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+        .rule-group .rule-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--surface2);
+            padding: 3px 10px 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+        }
+        .rule-item .remove-rule { cursor: pointer; color: var(--danger); font-weight: bold; margin-left: 4px; }
+        .rule-item .remove-rule:hover { opacity: 0.8; }
+        .rule-item .rule-toggle { cursor: pointer; margin-right: 4px; font-size: 14px; }
+
+        .add-rule-form { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .add-rule-form input, .add-rule-form select {
+            padding: 4px 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 12px;
+        }
+        .add-rule-form input { width: 110px; }
+        .add-rule-form .btn-sm { padding: 4px 12px; font-size: 12px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+        .add-rule-form .btn-sm:hover { opacity: 0.85; }
+
+        .text-muted { color: var(--placeholder); }
+        .badge { background: var(--border); padding: 0 8px; border-radius: 12px; font-size: 11px; color: var(--text-secondary); }
+
+        /* ========== 主区域 ========== */
+        .main-content { display: flex; flex: 1; min-height: 0; gap: 0; background: var(--border); }
+        .panel {
+            flex: none;
+            width: calc(50% - 3px);
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            min-width: 0;
+            transition: background var(--transition);
+        }
+        .split-divider {
+            width: 6px;
+            background: var(--border);
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background var(--transition);
+            position: relative;
+        }
+        .split-divider:hover, .split-divider.active { background: var(--accent); }
+        .split-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px; height: 32px;
+            background: var(--text-secondary);
+            border-radius: 2px;
+            opacity: 0.4;
+        }
+
+        .panel-header {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-header .char-count { font-weight: normal; font-size: 11px; }
+        .panel-body { flex: 1; padding: 14px; overflow-y: auto; min-height: 0; }
+        .panel-body textarea {
+            width: 100%; height: 100%;
+            background: transparent;
+            border: none; outline: none; resize: none;
+            color: var(--text);
+            font-size: 15px; line-height: 1.8;
+            font-family: inherit;
+        }
+        .panel-body textarea::placeholder { color: var(--placeholder); }
+
+        .preview-content { font-size: 15px; line-height: 1.8; word-break: break-word; }
+        .preview-content p { margin-bottom: 0.8em; }
+        .preview-content .highlight-bold { font-weight: 700; }
+        .preview-content .highlight-big { font-size: 1.3em; font-weight: 600; display: inline-block; }
+        .preview-content .highlight-bold-big { font-size: 1.3em; font-weight: 700; display: inline-block; }
+        .preview-content .highlight-color { color: #f9e2af; }
+        .preview-content .book-title { font-weight: 700; }
+
+        /* ========== 底部 HTML 面板 ========== */
+        .bottom-panel {
+            flex-shrink: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            transition: background var(--transition);
+        }
+        .bottom-panel .panel-header { cursor: pointer; user-select: none; }
+        .bottom-panel .panel-header:hover { background: var(--surface2); }
+        .bottom-panel .code-area {
+            padding: 12px 16px;
+            background: var(--code-bg);
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--accent2);
+            white-space: pre-wrap;
+            word-break: break-all;
+            transition: max-height 0.2s;
+        }
+        .bottom-panel.collapsed .code-area { display: none; }
+        .bottom-panel .resize-handle {
+            height: 4px;
+            background: var(--border);
+            cursor: ns-resize;
+            transition: background var(--transition);
+        }
+        .bottom-panel .resize-handle:hover { background: var(--accent); }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface2);
+            color: var(--text);
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(4px);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ========== 拖放区域 ========== */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            color: var(--placeholder);
+            transition: all var(--transition);
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .drop-zone.dragover { border-color: var(--accent); background: var(--surface2); }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .panel { flex: auto; width: 100% !important; height: 45%; }
+            .split-divider { display: none; }
+            .toolbar .title small { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Toast ===== -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ===== 工具栏 ===== -->
+    <div class="toolbar">
+        <span class="title">📚 书籍简介增强版 <small>v2.0</small></span>
+        <button class="btn" onclick="copyHTML()" title="复制生成的HTML代码">📋 复制HTML</button>
+        <button class="btn" onclick="copyText()" title="复制预览区纯文本">📄 复制文本</button>
+        <span class="sep"></span>
+        <button class="btn" onclick="toggleSettings()">⚙️ 设置</button>
+        <button class="btn" onclick="insertBookTemplate()">📖 插入模板</button>
+        <button class="btn danger" onclick="clearAll()">🗑️ 清空</button>
+        <span class="sep"></span>
+        <button class="btn" onclick="exportRules()">📤 导出规则</button>
+        <button class="btn" onclick="document.getElementById('importFileInput').click()">📥 导入规则</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importRules(event)">
+        <span class="sep"></span>
+        <button class="btn" onclick="resetSample()">🔄 示例</button>
+        <select id="themeSelect" class="btn" style="cursor:pointer;appearance:auto;padding-right:28px;" onchange="onThemeChange(this.value)">
+            <option value="dark">🌙 深色</option>
+            <option value="light">☀️ 浅色</option>
+            <option value="system">💻 跟随系统</option>
+        </select>
+    </div>
+
+    <!-- ===== 设置面板 ===== -->
+    <div class="settings-panel" id="settingsPanel">
+        <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;">
+            <label>预览字号 <input type="range" id="previewFontSize" min="12" max="28" value="15" oninput="updatePreviewSettings()"><span id="fontSizeVal">15px</span></label>
+            <label>段间距 <input type="range" id="paragraphSpacing" min="0" max="2" step="0.1" value="0.8" oninput="updatePreviewSettings()"><span id="spacingVal">0.8em</span></label>
+            <label>首行缩进 <input type="range" id="textIndent" min="0" max="4" step="0.1" value="0" oninput="updatePreviewSettings()"><span id="indentVal">0em</span></label>
+            <label>高亮色 <input type="color" id="highlightColor" value="#f9e2af" onchange="updatePreviewSettings()"></label>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:14px 30px;width:100%;border-top:1px solid var(--border);padding-top:10px;">
+            <!-- 关键词规则 -->
+            <div class="rule-group">
+                <span style="font-size:13px;color:var(--text-secondary);">🔑 关键词规则</span>
+                <div class="rule-row" id="rulesList"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="newKeyword" placeholder="关键词">
+                    <select id="newStyle">
+                        <option value="bold">加粗</option>
+                        <option value="big">加大</option>
+                        <option value="bold-big">加粗+加大</option>
+                        <option value="color">高亮</option>
+                    </select>
+                    <button class="btn-sm" onclick="addRule()">+ 添加</button>
+                    <button class="btn-sm" style="background:var(--danger);border-color:var(--danger);" onclick="clearAllRules()">清空</button>
+                </div>
+            </div>
+
+            <!-- 正则规则 -->
+            <div class="rule-group">
+                <span style="font-size:13px;color:var(--text-secondary);">🧩 正则规则</span>
+                <div class="rule-row" id="regexRulesList"></div>
+                <div class="add-rule-form">
+                    <input type="text" id="newRegexPattern" placeholder="例如: \d+ 或 第.+章" style="width:150px;">
+                    <select id="newRegexStyle">
+                        <option value="bold">加粗</option>
+                        <option value="big">加大</option>
+                        <option value="bold-big">加粗+加大</option>
+                        <option value="color">高亮</option>
+                    </select>
+                    <button class="btn-sm" onclick="addRegexRule()">+ 添加</button>
+                    <button class="btn-sm" style="background:var(--danger);border-color:var(--danger);" onclick="clearAllRegexRules()">清空</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 主区域 ===== -->
+    <div class="main-content">
+        <div class="panel">
+            <div class="panel-header">
+                <span>📥 输入文字</span>
+                <span class="char-count" id="inputCount">0 字</span>
+            </div>
+            <div class="panel-body" id="leftPanelBody">
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    📂 拖拽 .txt 文件到此处，或点击上传
+                </div>
+                <input type="file" id="fileInput" accept=".txt,.md" style="display:none;" onchange="handleFileUpload(event)">
+                <textarea id="inputArea" placeholder="在此粘贴或输入文字...&#10;每段之间用空行分隔，会自动添加 &lt;p&gt; 标签" oninput="onInputChange()"></textarea>
+            </div>
+        </div>
+
+        <div class="split-divider" id="panelDivider"></div>
+
+        <div class="panel" id="rightPanel">
+            <div class="panel-header">
+                <span>👁️ 预览</span>
+                <span class="char-count" id="previewCount">0 字</span>
+            </div>
+            <div class="panel-body">
+                <div class="preview-content" id="previewArea">
+                    <p class="text-muted">处理后的预览将在此显示...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 底部 HTML 面板 ===== -->
+    <div class="bottom-panel" id="bottomPanel">
+        <div class="resize-handle" id="resizeHandle" onmousedown="startResize(event)"></div>
+        <div class="panel-header" onclick="toggleBottom()">
+            <span>💻 HTML 代码</span>
+            <span id="bottomToggleIcon">▼</span>
+        </div>
+        <div class="code-area" id="codeArea"><span class="text-muted">处理后的 HTML 代码将在此显示...</span></div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  数据层：规则、存储
+        // ============================================================
+
+        const DEFAULT_RULES = [
+            { keyword: '重要', style: 'bold', enabled: true },
+            { keyword: '注意', style: 'bold-big', enabled: true },
+            { keyword: '警告', style: 'color', enabled: true },
+            { keyword: '提示', style: 'bold', enabled: true },
+            { keyword: '关键', style: 'bold-big', enabled: true },
+        ];
+
+        let rules = JSON.parse(localStorage.getItem('textProcessorRules_v2')) || DEFAULT_RULES.map(r => ({ ...r }));
+        let regexRules = JSON.parse(localStorage.getItem('textProcessorRegexRules_v2')) || [];
+
+        // ============================================================
+        //  DOM 引用
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const inputArea = $('inputArea');
+        const previewArea = $('previewArea');
+        const codeArea = $('codeArea');
+        const inputCount = $('inputCount');
+        const previewCount = $('previewCount');
+
+        // ============================================================
+        //  工具函数
+        // ============================================================
+        function escapeHTML(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
+        }
+
+        function countText(str) {
+            const ch = (str.match(/[\u4e00-\u9fff]/g) || []).length;
+            const en = (str.match(/[a-zA-Z0-9]+/g) || []).length;
+            return ch + en;
+        }
+
+        function showToast(msg, duration = 2200) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        // ============================================================
+        //  规则渲染
+        // ============================================================
+        function renderRules() {
+            const container = $('rulesList');
+            if (!rules.length) {
+                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无规则</span>';
+                return;
+            }
+            container.innerHTML = rules.map((r, i) => {
+                const styleLabel = { bold: '加粗', big: '加大', 'bold-big': '加粗+加大', color: '高亮' }[r.style] || r.style;
+                const toggleIcon = r.enabled ? '✅' : '⛔';
+                return `<div class="rule-item">
+                    <span class="rule-toggle" onclick="toggleRule(${i})" title="启用/禁用">${toggleIcon}</span>
+                    <strong>${escapeHTML(r.keyword)}</strong>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRule(${i})">✕</span>
+                </div>`;
+            }).join('');
+        }
+
+        function renderRegexRules() {
+            const container = $('regexRulesList');
+            if (!regexRules.length) {
+                container.innerHTML = '<span class="text-muted" style="font-size:12px;">暂无正则规则，例如: \\d+ 匹配数字</span>';
+                return;
+            }
+            container.innerHTML = regexRules.map((r, i) => {
+                const styleLabel = { bold: '加粗', big: '加大', 'bold-big': '加粗+加大', color: '高亮' }[r.style] || r.style;
+                const toggleIcon = r.enabled !== false ? '✅' : '⛔';
+                return `<div class="rule-item">
+                    <span class="rule-toggle" onclick="toggleRegexRule(${i})" title="启用/禁用">${toggleIcon}</span>
+                    <code style="font-size:11px;color:var(--accent);">${escapeHTML(r.pattern)}</code>
+                    <span style="color:var(--text-secondary)">${styleLabel}</span>
+                    <span class="remove-rule" onclick="removeRegexRule(${i})">✕</span>
+                </div>`;
+            }).join('');
+        }
+
+        function saveRules() {
+            localStorage.setItem('textProcessorRules_v2', JSON.stringify(rules));
+        }
+        function saveRegexRules() {
+            localStorage.setItem('textProcessorRegexRules_v2', JSON.stringify(regexRules));
+        }
+
+        // ---- 规则操作 ----
+        function toggleRule(idx) {
+            rules[idx].enabled = !rules[idx].enabled;
+            saveRules();
+            renderRules();
+            processText();
+        }
+        function toggleRegexRule(idx) {
+            regexRules[idx].enabled = (regexRules[idx].enabled !== false) ? false : true;
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+        }
+
+        function removeRule(idx) {
+            rules.splice(idx, 1);
+            saveRules();
+            renderRules();
+            processText();
+            showToast('已删除规则');
+        }
+        function removeRegexRule(idx) {
+            regexRules.splice(idx, 1);
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+            showToast('已删除正则规则');
+        }
+
+        function clearAllRules() {
+            if (!confirm('确定清空所有关键词规则吗？')) return;
+            rules = [];
+            saveRules();
+            renderRules();
+            processText();
+            showToast('已清空关键词规则');
+        }
+        function clearAllRegexRules() {
+            if (!confirm('确定清空所有正则规则吗？')) return;
+            regexRules = [];
+            saveRegexRules();
+            renderRegexRules();
+            processText();
+            showToast('已清空正则规则');
+        }
+
+        function addRule() {
+            const kw = $('newKeyword').value.trim();
+            const style = $('newStyle').value;
+            if (!kw) return showToast('请输入关键词');
+            if (rules.some(r => r.keyword === kw && r.style === style)) {
+                return showToast('规则已存在');
+            }
+            rules.push({ keyword: kw, style, enabled: true });
+            saveRules();
+            renderRules();
+            $('newKeyword').value = '';
+            processText();
+            showToast('✅ 规则已添加');
+        }
+
+        function addRegexRule() {
+            const pattern = $('newRegexPattern').value.trim();
+            const style = $('newRegexStyle').value;
+            if (!pattern) return showToast('请输入正则表达式');
+            try { new RegExp(pattern); } catch (e) { return showToast('❌ 正则不合法: ' + e.message); }
+            if (regexRules.some(r => r.pattern === pattern && r.style === style)) {
+                return showToast('规则已存在');
+            }
+            regexRules.push({ pattern, style, enabled: true });
+            saveRegexRules();
+            renderRegexRules();
+            $('newRegexPattern').value = '';
+            processText();
+            showToast('✅ 正则规则已添加');
+        }
+
+        // ---- 导入/导出 ----
+        function exportRules() {
+            const data = { version: 2, exportedAt: new Date().toISOString(), rules, regexRules };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'text-processor-rules-' + new Date().toISOString().slice(0,10) + '.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast('✅ 规则已导出');
+        }
+
+        function importRules(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.rules || !data.regexRules) throw new Error('格式错误');
+                    rules = data.rules.map(r => ({ ...r, enabled: r.enabled !== false }));
+                    regexRules = data.regexRules.map(r => ({ ...r, enabled: r.enabled !== false }));
+                    saveRules(); saveRegexRules();
+                    renderRules(); renderRegexRules();
+                    processText();
+                    showToast('✅ 已导入 ' + rules.length + ' 条关键词 + ' + regexRules.length + ' 条正则规则');
+                } catch (err) {
+                    showToast('❌ 导入失败: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ============================================================
+        //  核心处理
+        // ============================================================
+        function processText() {
+            const raw = inputArea.value;
+            if (!raw.trim()) {
+                previewArea.innerHTML = '<p class="text-muted">请输入文字内容</p>';
+                codeArea.textContent = '<!-- 暂无内容 -->';
+                previewCount.textContent = '0 字';
+                return;
+            }
+
+            // 1. 分段
+            const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const paragraphs = normalized.split(/\n{2,}/).filter(p => p.trim() !== '');
+
+            let htmlParts = [];
+            paragraphs.forEach(para => {
+                const lines = para.trim().split('\n').filter(l => l.trim() !== '');
+                if (!lines.length) return;
+                const escapedLines = lines.map(line => {
+                    let processed = escapeHTML(line);
+                    // 书名号加粗
+                    processed = processed.replace(/《([^》]+)》/g, '<b class="book-title">《$1》</b>');
+                    // 应用正则规则（只处理启用状态）
+                    regexRules.forEach(rule => {
+                        if (rule.enabled === false) return;
+                        try {
+                            const regex = new RegExp(rule.pattern, 'g');
+                            const cls = rule.style === 'bold' ? 'highlight-bold' :
+                                       rule.style === 'big' ? 'highlight-big' :
+                                       rule.style === 'bold-big' ? 'highlight-bold-big' :
+                                       rule.style === 'color' ? 'highlight-color' : '';
+                            processed = processed.replace(regex, `<span class="${cls}">$&</span>`);
+                        } catch (_) {}
+                    });
+                    // 应用关键词规则（只处理启用状态，按长度降序）
+                    const sorted = [...rules].filter(r => r.enabled !== false).sort((a,b) => b.keyword.length - a.keyword.length);
+                    sorted.forEach(rule => {
+                        const escKw = escapeHTML(rule.keyword);
+                        const regex = new RegExp(escKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                        const cls = rule.style === 'bold' ? 'highlight-bold' :
+                                   rule.style === 'big' ? 'highlight-big' :
+                                   rule.style === 'bold-big' ? 'highlight-bold-big' :
+                                   rule.style === 'color' ? 'highlight-color' : '';
+                        processed = processed.replace(regex, `<span class="${cls}">${escKw}</span>`);
+                    });
+                    return processed;
+                });
+                htmlParts.push(`<p>${escapedLines.join('<br>')}</p>`);
+            });
+
+            const finalHtml = htmlParts.join('\n');
+            previewArea.innerHTML = htmlParts.join('');
+            codeArea.textContent = finalHtml;
+
+            // 统计
+            const textContent = previewArea.innerText;
+            previewCount.textContent = countText(textContent) + ' 字';
+
+            // 应用预览样式
+            updatePreviewSettings();
+        }
+
+        // ============================================================
+        //  预览样式更新
+        // ============================================================
+        function updatePreviewSettings() {
+            const fs = $('previewFontSize').value;
+            const sp = $('paragraphSpacing').value;
+            const indent = $('textIndent').value;
+            const color = $('highlightColor').value;
+
+            $('fontSizeVal').textContent = fs + 'px';
+            $('spacingVal').textContent = sp + 'em';
+            $('indentVal').textContent = indent + 'em';
+
+            previewArea.style.fontSize = fs + 'px';
+            previewArea.querySelectorAll('p').forEach(p => {
+                p.style.marginBottom = sp + 'em';
+                p.style.textIndent = indent + 'em';
+            });
+            previewArea.querySelectorAll('.highlight-color').forEach(el => el.style.color = color);
+            // 同步高亮颜色到设置面板的color picker（已绑定）
+        }
+
+        // ============================================================
+        //  输入事件（防抖）
+        // ============================================================
+        let debounceTimer;
+        function onInputChange() {
+            const val = inputArea.value;
+            inputCount.textContent = countText(val) + ' 字';
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(processText, 280);
+        }
+
+        // ============================================================
+        //  文件拖拽/上传
+        // ============================================================
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                inputArea.value = ev.target.result;
+                onInputChange();
+                showToast('✅ 已加载文件: ' + file.name);
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        const dropZone = $('dropZone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.txt') || file.name.endsWith('.md'))) {
+                const reader = new FileReader();
+                reader.onload = (ev) => { inputArea.value = ev.target.result; onInputChange(); showToast('✅ 已加载: ' + file.name); };
+                reader.readAsText(file);
+            } else {
+                showToast('⚠️ 请拖入 .txt 或 .md 文件');
+            }
+        });
+
+        // ============================================================
+        //  模板插入
+        // ============================================================
+        function insertBookTemplate() {
+            const template = `书名：《》
+作者：
+出版社：
+出版时间：
+译者：
+ISBN：
+丛书名：
+
+【内容简介】
+
+`;
+            const start = inputArea.selectionStart;
+            const end = inputArea.selectionEnd;
+            const before = inputArea.value.substring(0, start);
+            const after = inputArea.value.substring(end);
+            inputArea.value = before + template + after;
+            inputArea.selectionStart = inputArea.selectionEnd = start + template.length;
+            onInputChange();
+            showToast('📖 模板已插入');
+        }
+
+        // ============================================================
+        //  复制功能
+        // ============================================================
+        function copyHTML() {
+            const html = codeArea.textContent;
+            if (!html.trim() || html.includes('暂无内容')) return showToast('没有可复制的内容');
+            navigator.clipboard.writeText(html).then(() => showToast('✅ HTML 已复制')).catch(() => showToast('❌ 复制失败'));
+        }
+        function copyText() {
+            const text = previewArea.innerText;
+            if (!text.trim() || text.includes('请输入文字内容')) return showToast('没有可复制的内容');
+            navigator.clipboard.writeText(text).then(() => showToast('✅ 纯文本已复制')).catch(() => showToast('❌ 复制失败'));
+        }
+
+        // ============================================================
+        //  清空 / 示例重置
+        // ============================================================
+        function clearAll() {
+            if (!confirm('确定清空所有内容吗？')) return;
+            inputArea.value = '';
+            previewArea.innerHTML = '<p class="text-muted">处理后的预览将在此显示...</p>';
+            codeArea.textContent = '<!-- 暂无内容 -->';
+            inputCount.textContent = '0 字';
+            previewCount.textContent = '0 字';
+            showToast('已清空');
+        }
+
+        function resetSample() {
+            const sample = `《思考的藝術》——52個思考錯誤，讓你不再只靠直覺決定一切
+
+重要：本书是德国率先击败《贾伯斯传》的著作，连续48周位居畅销榜Top 5。
+
+提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。
+
+警告：本书由全球最大商业书摘网站getAbstract创办人撰写，获《黑天鹅效应》作者塔雷伯鼎力推荐。
+
+关键功能包括：自动段落标签、关键词高亮、实时预览、HTML代码复制等。
+
+适用场景：无论是日常生活、学习、工作经营、投资理财还是爱情关系，本书指摘的52个思考错误，将让你看清自身弱点。`;
+            inputArea.value = sample;
+            onInputChange();
+            showToast('🔄 已加载示例文本');
+        }
+
+        // ============================================================
+        //  设置面板折叠
+        // ============================================================
+        let settingsVisible = false;
+        function toggleSettings() {
+            settingsVisible = !settingsVisible;
+            $('settingsPanel').classList.toggle('visible', settingsVisible);
+            $('settingsBtn').textContent = settingsVisible ? '⚙️ 隐藏设置' : '⚙️ 设置';
+        }
+
+        // ============================================================
+        //  底部面板折叠 / 缩放
+        // ============================================================
+        let bottomCollapsed = false;
+        function toggleBottom() {
+            bottomCollapsed = !bottomCollapsed;
+            $('bottomPanel').classList.toggle('collapsed', bottomCollapsed);
+            $('bottomToggleIcon').textContent = bottomCollapsed ? '▶' : '▼';
+        }
+
+        let isResizing = false, startY = 0, startHeight = 0;
+        function startResize(e) {
+            isResizing = true; startY = e.clientY;
+            const el = $('codeArea');
+            startHeight = el.offsetHeight;
+            document.body.style.cursor = 'ns-resize';
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onResize);
+            document.addEventListener('mouseup', stopResize);
+            e.preventDefault();
+        }
+        function onResize(e) {
+            if (!isResizing) return;
+            const dy = startY - e.clientY;
+            const newH = Math.max(60, Math.min(500, startHeight + dy));
+            $('codeArea').style.maxHeight = newH + 'px';
+        }
+        function stopResize() {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        // ============================================================
+        //  面板分割拖拽
+        // ============================================================
+        const divider = $('panelDivider');
+        const leftPanel = divider.previousElementSibling;
+        const rightPanel = $('rightPanel');
+        let isSplitting = false, splitStartX = 0, leftStartW = 0, rightStartW = 0;
+
+        divider.addEventListener('mousedown', function(e) {
+            isSplitting = true;
+            splitStartX = e.clientX;
+            leftStartW = leftPanel.offsetWidth;
+            rightStartW = rightPanel.offsetWidth;
+            divider.classList.add('active');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            document.addEventListener('mousemove', onSplit);
+            document.addEventListener('mouseup', stopSplit);
+            e.preventDefault();
+        });
+        function onSplit(e) {
+            if (!isSplitting) return;
+            const dx = e.clientX - splitStartX;
+            const containerW = leftPanel.parentElement.offsetWidth;
+            const minW = 200;
+            let lw = leftStartW + dx, rw = rightStartW - dx;
+            if (lw < minW) { lw = minW; rw = containerW - minW - 6; }
+            if (rw < minW) { rw = minW; lw = containerW - minW - 6; }
+            leftPanel.style.width = lw + 'px';
+            rightPanel.style.width = rw + 'px';
+        }
+        function stopSplit() {
+            isSplitting = false;
+            divider.classList.remove('active');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onSplit);
+            document.removeEventListener('mouseup', stopSplit);
+        }
+
+        // ============================================================
+        //  主题
+        // ============================================================
+        const THEME_KEY = 'textProcessorTheme_v2';
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function getSystemTheme() { return mediaQuery.matches ? 'dark' : 'light'; }
+        function applyTheme(theme) {
+            if (theme === 'system') document.documentElement.setAttribute('data-theme', getSystemTheme());
+            else document.documentElement.setAttribute('data-theme', theme);
+        }
+        function onThemeChange(theme) {
+            localStorage.setItem(THEME_KEY, theme);
+            applyTheme(theme);
+            $('themeSelect').value = theme;
+        }
+        mediaQuery.addEventListener('change', () => {
+            if (localStorage.getItem(THEME_KEY) === 'system') applyTheme('system');
+        });
+
+        function initTheme() {
+            const saved = localStorage.getItem(THEME_KEY) || 'dark';
+            $('themeSelect').value = saved;
+            applyTheme(saved);
+        }
+
+        // ============================================================
+        //  键盘快捷键
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); copyHTML(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { /* 浏览器原生撤销在textarea上有效 */ }
+        });
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        function init() {
+            initTheme();
+            renderRules();
+            renderRegexRules();
+            // 加载示例
+            const sample = `《思考的藝術》——52個思考錯誤，讓你不再只靠直覺決定一切
+
+重要：本书是德国率先击败《贾伯斯传》的著作，连续48周位居畅销榜Top 5。
+
+提示：你可以在设置面板中添加自定义关键词规则，让特定文字自动加粗、加大或高亮显示。
+
+警告：本书由全球最大商业书摘网站getAbstract创办人撰写，获《黑天鹅效应》作者塔雷伯鼎力推荐。
+
+关键功能包括：自动段落标签、关键词高亮、实时预览、HTML代码复制等。
+
+适用场景：无论是日常生活、学习、工作经营、投资理财还是爱情关系，本书指摘的52个思考错误，将让你看清自身弱点。`;
+            inputArea.value = sample;
+            inputCount.textContent = countText(sample) + ' 字';
+            processText();
+        }
+
+        init();
+    </script>
+</body>
+</html>
